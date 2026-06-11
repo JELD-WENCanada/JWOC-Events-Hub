@@ -1,3 +1,5 @@
+const ADMIN_EMAIL_KEY = "jwocEventsHubAdminEmail";
+
 function showMessage(elementId, text, type) {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -9,10 +11,32 @@ function showMessage(elementId, text, type) {
   element.style.display = text ? "block" : "none";
 }
 
+function normalizeAdminEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function isAllowedAdminEmail(email) {
+  const normalized = normalizeAdminEmail(email);
+  return normalized.includes("@") && normalized.endsWith("@jeldwen.com");
+}
+
+function getStoredAdminEmail() {
+  return sessionStorage.getItem(ADMIN_EMAIL_KEY) || "";
+}
+
 async function apiRequest(path, options = {}) {
+  const email = getStoredAdminEmail();
+  const headers = { ...(options.headers || {}) };
+  if (email) {
+    headers["X-Admin-Email"] = email;
+  }
+
   const response = await fetch(path, {
     credentials: "same-origin",
     ...options,
+    headers,
   });
   const contentType = response.headers.get("content-type") || "";
 
@@ -33,23 +57,31 @@ async function apiRequest(path, options = {}) {
 }
 
 async function getAdminSession() {
-  return apiRequest("/api/admin/session");
+  const email = getStoredAdminEmail();
+  return {
+    authenticated: Boolean(email),
+    email: email || null,
+  };
 }
 
-async function loginAdmin(email) {
-  return apiRequest("/api/admin/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email }),
-  });
+function loginAdmin(email) {
+  const normalized = normalizeAdminEmail(email);
+
+  if (!normalized) {
+    throw new Error("Please enter your email address.");
+  }
+
+  if (!isAllowedAdminEmail(normalized)) {
+    throw new Error("Please use your JELD-WEN company email.");
+  }
+
+  sessionStorage.setItem(ADMIN_EMAIL_KEY, normalized);
+  return { authenticated: true, email: normalized };
 }
 
-async function logoutAdmin() {
-  return apiRequest("/api/admin/logout", {
-    method: "POST",
-  });
+function logoutAdmin() {
+  sessionStorage.removeItem(ADMIN_EMAIL_KEY);
+  return { authenticated: false };
 }
 
 function formatDate(value) {
