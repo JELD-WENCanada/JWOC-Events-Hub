@@ -1,0 +1,12 @@
+{
+  "name": "jwoc-events-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JWOC Events Hub — event lead collection and export for JW Sales Hub",
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
