@@ -4,6 +4,7 @@
   "private": true,
   "description": "JWOC Events Hub — event lead collection and export for JW Sales Hub",
   "scripts": {
+    "local": "export $(grep -v '^#' .env.local | xargs) && vercel dev --yes --listen 3000",
     "format": "prettier --write ."
   },
   "devDependencies": {

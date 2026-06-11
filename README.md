@@ -7,7 +7,7 @@ Simple event lead collection for JW Sales Hub. Leads are stored as JSON files in
 1. Create a GitHub fine-grained personal access token with **Contents** read/write access to this repo.
 2. Deploy to Vercel and connect this repository.
 3. Add environment variables in Vercel:
-   - `API_KEY` — shared secret used by JW Sales Hub and the web UI
+   - `API_KEY` — shared secret used by JW Sales Hub for lead submission and dashboard sessions
    - `GITHUB_TOKEN` — GitHub PAT
    - `GITHUB_OWNER` — GitHub org or username
    - `GITHUB_REPO` — `JWOC-Events-Hub`
@@ -25,4 +25,4 @@ Simple event lead collection for JW Sales Hub. Leads are stored as JSON files in
 
 ## Local development
 
-Copy `.env.example` to `.env.local` for Vercel CLI, or set the variables in your shell before running `vercel dev`.
+Copy `.env.example` to `.env.local`, set your values, then run `vercel dev` or `npm run local`.

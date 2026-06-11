@@ -1,13 +1,3 @@
-const API_KEY_STORAGE_KEY = "jwocEventsHubApiKey";
-
-function getApiKey() {
-  return sessionStorage.getItem(API_KEY_STORAGE_KEY) || "";
-}
-
-function saveApiKey(value) {
-  sessionStorage.setItem(API_KEY_STORAGE_KEY, value.trim());
-}
-
 function showMessage(elementId, text, type) {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -20,7 +10,10 @@ function showMessage(elementId, text, type) {
 }
 
 async function apiRequest(path, options = {}) {
-  const response = await fetch(path, options);
+  const response = await fetch(path, {
+    credentials: "same-origin",
+    ...options,
+  });
   const contentType = response.headers.get("content-type") || "";
 
   if (!response.ok) {
@@ -39,6 +32,26 @@ async function apiRequest(path, options = {}) {
   return response.text();
 }
 
+async function getAdminSession() {
+  return apiRequest("/api/admin/session");
+}
+
+async function loginAdmin(email) {
+  return apiRequest("/api/admin/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+}
+
+async function logoutAdmin() {
+  return apiRequest("/api/admin/logout", {
+    method: "POST",
+  });
+}
+
 function formatDate(value) {
   if (!value) {
     return "";
@@ -49,7 +62,11 @@ function formatDate(value) {
     return value;
   }
 
-  return date.toLocaleDateString();
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatDateTime(value) {
@@ -63,4 +80,13 @@ function formatDateTime(value) {
   }
 
   return date.toLocaleString();
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }

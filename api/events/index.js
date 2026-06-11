@@ -1,5 +1,5 @@
 const { setCorsHeaders, handleOptions } = require("../lib/cors");
-const { requireApiKey } = require("../lib/auth");
+const { requireWriteAuth } = require("../lib/auth");
 const { parseJsonBody } = require("../lib/request");
 const { listEvents, createEvent } = require("../lib/events");
 
@@ -17,7 +17,7 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === "POST") {
-      if (!requireApiKey(req, res)) {
+      if (!requireWriteAuth(req, res)) {
         return;
       }
 

@@ -1,4 +1,42 @@
+const fs = require("fs");
+const path = require("path");
+
 const GITHUB_API = "https://api.github.com";
+const DATA_ROOT = path.join(__dirname, "..", "..");
+
+function useLocalStorage() {
+  const token = process.env.GITHUB_TOKEN || "";
+  if (
+    !token ||
+    token.includes("your_github") ||
+    token === "ghp_your_github_pat"
+  ) {
+    return true;
+  }
+
+  return process.env.USE_LOCAL_DATA === "true";
+}
+
+function localFilePath(relativePath) {
+  return path.join(DATA_ROOT, relativePath);
+}
+
+function readJsonLocal(relativePath) {
+  const fullPath = localFilePath(relativePath);
+  if (!fs.existsSync(fullPath)) {
+    return null;
+  }
+
+  const data = JSON.parse(fs.readFileSync(fullPath, "utf8"));
+  return { data, sha: String(fs.statSync(fullPath).mtimeMs) };
+}
+
+function writeJsonLocal(relativePath, content) {
+  const fullPath = localFilePath(relativePath);
+  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+  fs.writeFileSync(fullPath, JSON.stringify(content, null, 2) + "\n");
+  return { sha: String(fs.statSync(fullPath).mtimeMs) };
+}
 
 function getConfig() {
   const token = process.env.GITHUB_TOKEN;
@@ -15,9 +53,9 @@ function getConfig() {
   return { token, owner, repo, branch };
 }
 
-async function githubRequest(path, options = {}) {
+async function githubRequest(filePath, options = {}) {
   const { token, owner, repo } = getConfig();
-  const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${path}`;
+  const url = `${GITHUB_API}/repos/${owner}/${repo}/contents/${filePath}`;
 
   const response = await fetch(url, {
     ...options,
@@ -32,8 +70,12 @@ async function githubRequest(path, options = {}) {
   return response;
 }
 
-async function readJson(path) {
-  const response = await githubRequest(path);
+async function readJson(filePath) {
+  if (useLocalStorage()) {
+    return readJsonLocal(filePath);
+  }
+
+  const response = await githubRequest(filePath);
 
   if (response.status === 404) {
     return null;
@@ -42,7 +84,7 @@ async function readJson(path) {
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `GitHub read failed for ${path}: ${response.status} ${errorBody}`,
+      `GitHub read failed for ${filePath}: ${response.status} ${errorBody}`,
     );
   }
 
@@ -54,10 +96,14 @@ async function readJson(path) {
   return { data: content, sha: file.sha };
 }
 
-async function writeJson(path, content, sha) {
+async function writeJson(filePath, content, sha) {
+  if (useLocalStorage()) {
+    return writeJsonLocal(filePath, content);
+  }
+
   const { branch } = getConfig();
   const body = {
-    message: `Update ${path}`,
+    message: `Update ${filePath}`,
     content: Buffer.from(JSON.stringify(content, null, 2) + "\n").toString(
       "base64",
     ),
@@ -68,7 +114,7 @@ async function writeJson(path, content, sha) {
     body.sha = sha;
   }
 
-  const response = await githubRequest(path, {
+  const response = await githubRequest(filePath, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -77,7 +123,7 @@ async function writeJson(path, content, sha) {
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
-      `GitHub write failed for ${path}: ${response.status} ${errorBody}`,
+      `GitHub write failed for ${filePath}: ${response.status} ${errorBody}`,
     );
   }
 

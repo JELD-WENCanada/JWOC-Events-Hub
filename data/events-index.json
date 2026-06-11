@@ -1,3 +1,32 @@
 {
-  "events": []
+  "events": [
+    {
+      "id": "home-hardware-2026",
+      "name": "Home Hardware - 2026",
+      "date": "2026-01-01",
+      "createdAt": "2026-06-11T00:00:00.000Z",
+      "leadCount": 0
+    },
+    {
+      "id": "supply-build-canada-2027",
+      "name": "Supply Build Canada - 2027",
+      "date": "2027-01-01",
+      "createdAt": "2026-06-11T00:00:00.000Z",
+      "leadCount": 0
+    },
+    {
+      "id": "absda-2027",
+      "name": "ABSDA - 2027",
+      "date": "2027-01-01",
+      "createdAt": "2026-06-11T00:00:00.000Z",
+      "leadCount": 0
+    },
+    {
+      "id": "timber-mart-2027",
+      "name": "Timber Mart - 2027",
+      "date": "2027-01-01",
+      "createdAt": "2026-06-11T00:00:00.000Z",
+      "leadCount": 0
+    }
+  ]
 }

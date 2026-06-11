@@ -4,34 +4,55 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/style.css?v=2" />
   </head>
   <body>
-    <div class="page">
-      <div class="card">
-        <div class="header-row">
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="app-header-brand">
+          <img
+            src="/images/jw-logo.png"
+            alt=""
+            class="app-header-logo"
+            width="36"
+            height="36"
+          />
+          <h1 class="nav-title">Events Hub</h1>
+        </div>
+        <a href="/" class="btn btn-text">← Events</a>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <section class="card">
+        <div class="detail-head">
           <div>
-            <a href="/" class="button secondary">← Back to Events</a>
-            <h1 id="eventTitle">Event Leads</h1>
+            <h1 id="eventTitle">Event</h1>
             <p id="eventMeta" class="subtitle"></p>
           </div>
           <div class="actions">
-            <a id="exportCsvButton" class="button" href="#">Export CSV</a>
-            <button type="button" id="exportJsonButton" class="secondary">
-              Download JSON
+            <a id="exportCsvButton" class="btn btn-secondary" href="#"
+              >Export CSV</a
+            >
+            <button
+              type="button"
+              id="exportJsonButton"
+              class="btn btn-secondary"
+            >
+              JSON
             </button>
           </div>
         </div>
 
-        <div id="leadsTableWrap"></div>
+        <div id="leadsTableWrap" class="table-wrap"></div>
         <div id="leadsEmpty" class="empty-state" style="display: none">
           No leads captured yet for this event.
         </div>
         <div id="pageMessage" class="message error" style="display: none"></div>
-      </div>
-    </div>
+      </section>
+    </main>
 
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=2"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
@@ -57,7 +78,7 @@
           );
 
           eventTitle.textContent = event.name;
-          eventMeta.textContent = `${formatDate(event.date)} · Event ID: ${event.id} · ${(event.leads || []).length} leads`;
+          eventMeta.textContent = `${formatDate(event.date)} · ${(event.leads || []).length} leads captured`;
 
           const leads = event.leads || [];
           leadsEmpty.style.display = leads.length ? "none" : "block";
@@ -74,31 +95,29 @@
                 : "";
               return `
                 <tr>
-                  <td>${lead.firstName || ""}</td>
-                  <td>${lead.lastName || ""}</td>
-                  <td>${lead.email || ""}</td>
-                  <td>${lead.phone || ""}</td>
-                  <td>${lead.company || ""}</td>
-                  <td>${products}</td>
-                  <td>${lead.capturedBy || ""}</td>
-                  <td>${formatDateTime(lead.capturedAt)}</td>
+                  <td>${escapeHtml(lead.firstName || "")} ${escapeHtml(lead.lastName || "")}</td>
+                  <td>${escapeHtml(lead.email || "")}</td>
+                  <td class="hide-mobile">${escapeHtml(lead.phone || "")}</td>
+                  <td class="hide-mobile">${escapeHtml(lead.company || "")}</td>
+                  <td class="hide-mobile">${escapeHtml(products)}</td>
+                  <td class="hide-mobile">${escapeHtml(lead.capturedBy || "")}</td>
+                  <td>${escapeHtml(formatDateTime(lead.capturedAt))}</td>
                 </tr>
               `;
             })
             .join("");
 
           leadsTableWrap.innerHTML = `
-            <table>
+            <table class="data-table">
               <thead>
                 <tr>
-                  <th>First Name</th>
-                  <th>Last Name</th>
+                  <th>Name</th>
                   <th>Email</th>
-                  <th>Phone</th>
-                  <th>Company</th>
-                  <th>Products</th>
-                  <th>Captured By</th>
-                  <th>Captured At</th>
+                  <th class="hide-mobile">Phone</th>
+                  <th class="hide-mobile">Company</th>
+                  <th class="hide-mobile">Products</th>
+                  <th class="hide-mobile">Captured by</th>
+                  <th>Captured</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>

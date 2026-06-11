@@ -4,106 +4,232 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/style.css?v=2" />
   </head>
   <body>
-    <div class="page">
-      <div class="card">
-        <h1>JWOC Events Hub</h1>
-        <p class="subtitle">
-          Manage event leads captured from JW Sales Hub. Create events, view
-          submissions, and export to CSV.
-        </p>
-
-        <div class="api-key-panel">
-          <label for="apiKey">API Key (required to create events)</label>
-          <input
-            id="apiKey"
-            type="password"
-            placeholder="Enter your API key"
-            autocomplete="off"
-          />
-          <div class="actions">
-            <button type="button" id="saveApiKeyButton">Save API Key</button>
-          </div>
-        </div>
-
-        <h2>Create Event</h2>
-        <form id="createEventForm">
-          <label for="eventName">Event Name</label>
-          <input
-            id="eventName"
-            name="name"
-            type="text"
-            required
-            placeholder="Toronto Home Show 2026"
-          />
-
-          <label for="eventDate">Event Date</label>
-          <input id="eventDate" name="date" type="date" required />
-
-          <label for="eventId">Event ID (optional)</label>
-          <input
-            id="eventId"
-            name="id"
-            type="text"
-            placeholder="toronto-home-show-2026"
-          />
-
-          <div class="actions">
-            <button type="submit" id="createEventButton">Create Event</button>
-          </div>
-        </form>
-        <div id="formMessage" class="message" style="display: none"></div>
-
-        <h2>Events</h2>
-        <ul id="eventsList" class="event-list"></ul>
-        <div id="eventsEmpty" class="empty-state" style="display: none">
-          No events yet. Create your first event above.
-        </div>
+    <section id="loginScreen" class="login-screen">
+      <div class="brand-block">
+        <img
+          src="/images/jw-logo.png"
+          alt="JELD-WEN"
+          class="brand-logo"
+          width="250"
+          height="100"
+        />
+        <p class="brand-subtitle">Events Hub</p>
       </div>
+
+      <form id="loginForm" class="login-form">
+        <div>
+          <label class="field-label" for="adminEmail">Email</label>
+          <input
+            id="adminEmail"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="Enter your email"
+          />
+          <p class="field-hint">
+            Use your authorized @jeldwen.com email to continue.
+          </p>
+        </div>
+        <button type="submit" id="loginButton" class="btn btn-primary">
+          Continue
+        </button>
+      </form>
+      <div id="loginMessage" class="message" style="display: none"></div>
+    </section>
+
+    <div id="dashboard" hidden>
+      <header class="app-header">
+        <div class="app-header-inner">
+          <div class="app-header-brand">
+            <img
+              src="/images/jw-logo.png"
+              alt=""
+              class="app-header-logo"
+              width="36"
+              height="36"
+            />
+            <h1 class="nav-title">Events Hub</h1>
+          </div>
+          <button type="button" id="signOutButton" class="btn btn-text">
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <div class="metrics">
+          <div class="metric-card">
+            <span class="metric-label">Events</span>
+            <span id="totalEventsStat" class="metric-value">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Total leads</span>
+            <span id="totalLeadsStat" class="metric-value">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Avg. per event</span>
+            <span id="avgLeadsStat" class="metric-value">0</span>
+          </div>
+        </div>
+
+        <section class="section-block">
+          <h2 class="section-title">Upcoming Events</h2>
+          <div id="eventsGrid" class="event-grid"></div>
+          <div id="eventsEmpty" class="empty-state" style="display: none">
+            No events yet. Create one below to get started.
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title">New Event</h2>
+          <form id="createEventForm">
+            <div class="form-grid">
+              <div class="field">
+                <label class="field-label" for="eventName">Name</label>
+                <input
+                  id="eventName"
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="Toronto Home Show 2026"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label" for="eventDate">Date</label>
+                <input id="eventDate" name="date" type="date" required />
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="eventId"
+                >ID <span class="hint">optional</span></label
+              >
+              <input
+                id="eventId"
+                name="id"
+                type="text"
+                placeholder="toronto-home-show-2026"
+              />
+            </div>
+            <div class="actions">
+              <button
+                type="submit"
+                id="createEventButton"
+                class="btn btn-primary"
+              >
+                Create event
+              </button>
+            </div>
+          </form>
+          <div id="formMessage" class="message" style="display: none"></div>
+        </section>
+      </main>
     </div>
 
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=2"></script>
     <script>
-      const apiKeyInput = document.getElementById("apiKey");
+      const loginScreen = document.getElementById("loginScreen");
+      const dashboard = document.getElementById("dashboard");
+      const loginForm = document.getElementById("loginForm");
+      const signOutButton = document.getElementById("signOutButton");
       const createEventForm = document.getElementById("createEventForm");
-      const eventsList = document.getElementById("eventsList");
+      const eventsGrid = document.getElementById("eventsGrid");
       const eventsEmpty = document.getElementById("eventsEmpty");
+      const totalEventsStat = document.getElementById("totalEventsStat");
+      const totalLeadsStat = document.getElementById("totalLeadsStat");
+      const avgLeadsStat = document.getElementById("avgLeadsStat");
 
-      apiKeyInput.value = getApiKey();
+      function setAuthenticated(isAuthenticated) {
+        loginScreen.hidden = isAuthenticated;
+        dashboard.hidden = !isAuthenticated;
+      }
 
-      document
-        .getElementById("saveApiKeyButton")
-        .addEventListener("click", () => {
-          saveApiKey(apiKeyInput.value);
-          showMessage(
-            "formMessage",
-            "API key saved for this session.",
-            "success",
-          );
-        });
+      function eventYear(dateValue) {
+        const date = new Date(dateValue);
+        if (Number.isNaN(date.getTime())) {
+          return "";
+        }
+        return String(date.getFullYear());
+      }
+
+      async function initSession() {
+        try {
+          const session = await getAdminSession();
+          setAuthenticated(session.authenticated);
+          if (session.authenticated) {
+            await loadEvents();
+          }
+        } catch (error) {
+          setAuthenticated(false);
+          showMessage("loginMessage", error.message, "error");
+        }
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = document.getElementById("loginButton");
+        const formData = new FormData(loginForm);
+        button.disabled = true;
+
+        try {
+          await loginAdmin(String(formData.get("email") || ""));
+          loginForm.reset();
+          setAuthenticated(true);
+          showMessage("loginMessage", "", "success");
+          await loadEvents();
+        } catch (error) {
+          showMessage("loginMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      signOutButton.addEventListener("click", async () => {
+        try {
+          await logoutAdmin();
+        } finally {
+          setAuthenticated(false);
+          eventsGrid.innerHTML = "";
+        }
+      });
 
       async function loadEvents() {
         try {
           const data = await apiRequest("/api/events");
           const events = data.events || [];
+          const totalLeads = events.reduce(
+            (sum, event) => sum + (event.leadCount || 0),
+            0,
+          );
+          const avgLeads =
+            events.length > 0 ? (totalLeads / events.length).toFixed(1) : "0";
 
-          eventsList.innerHTML = "";
+          totalEventsStat.textContent = String(events.length);
+          totalLeadsStat.textContent = String(totalLeads);
+          avgLeadsStat.textContent = avgLeads;
+
           eventsEmpty.style.display = events.length ? "none" : "block";
+          eventsGrid.innerHTML = "";
 
           events.forEach((event) => {
-            const item = document.createElement("li");
-            item.innerHTML = `
-              <a href="/event.html?id=${encodeURIComponent(event.id)}">
-                <strong>${event.name}</strong>
-                <div class="event-meta">
-                  ${formatDate(event.date)} ·
-                  <span class="badge">${event.leadCount || 0} leads</span>
-                </div>
-              </a>
+            const card = document.createElement("a");
+            card.className = "event-card";
+            card.href = `/event.html?id=${encodeURIComponent(event.id)}`;
+            card.innerHTML = `
+              <div class="event-card-well">
+                <span class="event-year">${escapeHtml(eventYear(event.date))}</span>
+              </div>
+              <h3 class="event-card-title">${escapeHtml(event.name)}</h3>
+              <p class="event-card-meta">
+                <span>${escapeHtml(formatDate(event.date))} · ${event.leadCount || 0} leads</span>
+                <span class="event-card-chevron" aria-hidden="true">›</span>
+              </p>
             `;
-            eventsList.appendChild(item);
+            eventsGrid.appendChild(card);
           });
         } catch (error) {
           showMessage("formMessage", error.message, "error");
@@ -112,16 +238,6 @@
 
       createEventForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-
-        const apiKey = getApiKey();
-        if (!apiKey) {
-          showMessage(
-            "formMessage",
-            "Save your API key before creating an event.",
-            "error",
-          );
-          return;
-        }
 
         const formData = new FormData(createEventForm);
         const payload = {
@@ -142,13 +258,12 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
             },
             body: JSON.stringify(payload),
           });
 
           createEventForm.reset();
-          showMessage("formMessage", "Event created successfully.", "success");
+          showMessage("formMessage", "Event created.", "success");
           await loadEvents();
         } catch (error) {
           showMessage("formMessage", error.message, "error");
@@ -157,7 +272,7 @@
         }
       });
 
-      loadEvents();
+      initSession();
     </script>
   </body>
 </html>
