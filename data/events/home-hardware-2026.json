@@ -5,20 +5,6 @@
   "createdAt": "2026-06-11T00:00:00.000Z",
   "leads": [
     {
-      "id": "4a55f761-4f0f-49e6-b9e4-174d527af63f",
-      "firstName": "Abrar",
-      "lastName": "Chowdhry",
-      "email": "Hide My Email",
-      "phone": "647-328-0756",
-      "company": "Google",
-      "notes": "Mozilla",
-      "productsOfInterest": [
-        "Firefox"
-      ],
-      "capturedBy": "User",
-      "capturedAt": "2026-06-12T18:29:17.688Z"
-    },
-    {
       "id": "e2b473fd-4911-4c1a-94c9-50a9b9e5f7a8",
       "firstName": "Susan",
       "lastName": "Albizre",
