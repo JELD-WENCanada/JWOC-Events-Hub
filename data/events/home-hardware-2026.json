@@ -17,20 +17,6 @@
       ],
       "capturedBy": "Test User",
       "capturedAt": "2026-06-12T17:44:31.301Z"
-    },
-    {
-      "id": "995c3078-a644-454d-af26-a261b33f0ef8",
-      "firstName": "Test",
-      "lastName": "Test",
-      "email": "test@gmail.com",
-      "phone": "647-328-0000",
-      "company": "Jw - Usa",
-      "notes": "I need to test",
-      "productsOfInterest": [
-        "Jwc8500"
-      ],
-      "capturedBy": "Abrar Chowdhry",
-      "capturedAt": "2026-06-12T18:23:33.089Z"
     }
   ]
 }
