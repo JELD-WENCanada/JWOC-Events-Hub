@@ -17,6 +17,18 @@ function findDuplicateMatch(leads, firstName, lastName) {
   );
 }
 
+function refreshDuplicateFlags(leads) {
+  const duplicateIds = getDuplicateLeadIds(leads);
+
+  for (const lead of leads || []) {
+    if (duplicateIds.has(lead.id)) {
+      lead.isDuplicate = true;
+    } else {
+      delete lead.isDuplicate;
+    }
+  }
+}
+
 function getDuplicateLeadIds(leads) {
   const counts = new Map();
 
@@ -122,4 +134,5 @@ module.exports = {
   getDuplicateLeadIds,
   leadNameKey,
   parseLeadFilters,
+  refreshDuplicateFlags,
 };

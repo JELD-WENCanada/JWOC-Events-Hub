@@ -334,6 +334,20 @@ input::placeholder {
   font-size: 12px;
 }
 
+.btn-danger-ghost {
+  color: var(--danger, #b42318);
+}
+
+.btn-danger-ghost:hover {
+  background: rgba(180, 35, 24, 0.08);
+  color: var(--danger, #b42318);
+}
+
+.actions-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

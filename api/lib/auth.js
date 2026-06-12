@@ -36,9 +36,19 @@ function requireWriteAuth(req, res) {
   return false;
 }
 
+function requireAdminSession(req, res) {
+  if (checkAdminSession(req)) {
+    return true;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+  return false;
+}
+
 module.exports = {
   checkApiKey,
   checkWriteAuth,
+  requireAdminSession,
   requireApiKey,
   requireWriteAuth,
 };

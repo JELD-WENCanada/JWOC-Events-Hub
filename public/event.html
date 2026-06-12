@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=10" />
+    <link rel="stylesheet" href="/css/style.css?v=11" />
   </head>
   <body>
     <header class="app-header">
@@ -153,7 +153,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=10"></script>
+    <script src="/js/app.js?v=11"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
@@ -404,6 +404,17 @@
             const duplicateBadge = isDuplicate
               ? '<span class="duplicate-badge">Duplicate</span>'
               : "";
+            const deleteCell = isAdmin
+              ? `<td class="actions-cell">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-small btn-danger-ghost"
+                    data-delete-lead="${escapeHtml(lead.id)}"
+                  >
+                    Delete
+                  </button>
+                </td>`
+              : "";
 
             return `
               <tr class="${isDuplicate ? "duplicate-row" : ""}">
@@ -419,10 +430,13 @@
                 <td class="hide-mobile">${escapeHtml(products || "—")}</td>
                 <td class="hide-mobile">${escapeHtml(lead.capturedBy || "—")}</td>
                 <td>${escapeHtml(formatDateTime(lead.capturedAt))}</td>
+                ${deleteCell}
               </tr>
             `;
           })
           .join("");
+
+        const actionsHeader = isAdmin ? "<th></th>" : "";
 
         leadsTableWrap.innerHTML = `
           <table class="data-table">
@@ -435,13 +449,57 @@
                 <th class="hide-mobile">Products</th>
                 <th class="hide-mobile">Captured by</th>
                 <th>Captured</th>
+                ${actionsHeader}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
         `;
 
+        if (isAdmin) {
+          leadsTableWrap
+            .querySelectorAll("[data-delete-lead]")
+            .forEach((button) => {
+              button.addEventListener("click", () => {
+                const leadId = button.getAttribute("data-delete-lead");
+                const lead = allLeads.find((item) => item.id === leadId);
+                const leadName = lead
+                  ? `${lead.firstName || ""} ${lead.lastName || ""}`.trim()
+                  : "this contact";
+                confirmDeleteLead(leadId, leadName);
+              });
+            });
+        }
+
         renderPaginationControls(pagination);
+      }
+
+      async function confirmDeleteLead(leadId, leadName) {
+        const confirmed = window.confirm(
+          `Delete ${leadName}? This cannot be undone.`,
+        );
+        if (!confirmed) {
+          return;
+        }
+
+        showMessage("pageMessage", "", "success");
+
+        try {
+          eventData = await deleteLead(eventId, leadId);
+          const filters = getLeadFiltersFromForm(leadFilters);
+          const filteredLeads = filterLeads(eventData.leads || [], filters);
+          const pagination = paginate(filteredLeads, leadsPage);
+          if (
+            pagination.page > pagination.totalPages &&
+            pagination.totalPages > 0
+          ) {
+            leadsPage = pagination.totalPages;
+          }
+          renderLeaderboard();
+          renderLeads();
+        } catch (error) {
+          showMessage("pageMessage", error.message, "error");
+        }
       }
 
       function exportFilteredJson() {

@@ -13,20 +13,28 @@ const DEFAULT_ALLOWED_EMAILS = [
 const LOCAL_SESSION_SECRET = "jwoc-events-hub-local-dev";
 
 function getSessionSecret() {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+
   const apiKey = process.env.API_KEY;
   if (apiKey && apiKey !== "your-shared-secret-key") {
     return apiKey;
   }
 
-  if (process.env.SESSION_SECRET) {
-    return process.env.SESSION_SECRET;
+  if (!process.env.VERCEL) {
+    return LOCAL_SESSION_SECRET;
   }
 
-  if (process.env.VERCEL_ENV === "production") {
-    return apiKey || "";
+  return "";
+}
+
+function getSessionConfigError() {
+  if (getSessionSecret()) {
+    return null;
   }
 
-  return LOCAL_SESSION_SECRET;
+  return "Dashboard login requires API_KEY or SESSION_SECRET to be set in Vercel environment variables.";
 }
 
 function normalizeEmail(email) {
@@ -172,6 +180,7 @@ module.exports = {
   checkAdminEmail,
   checkAdminSession,
   createSessionToken,
+  getSessionConfigError,
   getSessionEmail,
   normalizeEmail,
 };

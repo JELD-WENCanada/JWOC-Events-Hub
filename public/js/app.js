@@ -337,6 +337,15 @@ async function updateEvent(eventId, updates) {
   });
 }
 
+async function deleteLead(eventId, leadId) {
+  return apiRequest(
+    `/api/events/${encodeURIComponent(eventId)}/leads/${encodeURIComponent(leadId)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
 async function fetchRepLeaderboard(includeArchived = false) {
   const query = includeArchived ? "?includeArchived=true" : "";
   const data = await apiRequest(`/api/events/leaderboard${query}`);

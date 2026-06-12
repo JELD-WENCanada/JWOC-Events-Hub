@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { findDuplicateMatch } = require("./leads");
+const { findDuplicateMatch, refreshDuplicateFlags } = require("./leads");
 const { readJson, withWriteRetry, writeJson } = require("./github");
 
 const INDEX_PATH = "data/events-index.json";
@@ -199,6 +199,37 @@ async function addLead(eventId, leadInput) {
   };
 }
 
+async function deleteLead(eventId, leadId) {
+  const normalizedLeadId = String(leadId || "").trim();
+  if (!normalizedLeadId) {
+    throw new Error("Lead ID is required");
+  }
+
+  await withWriteRetry(async () => {
+    const result = await readJson(eventFilePath(eventId));
+    if (!result) {
+      throw new Error("Event not found");
+    }
+
+    const event = result.data;
+    const leads = event.leads || [];
+    const nextLeads = leads.filter((lead) => lead.id !== normalizedLeadId);
+
+    if (nextLeads.length === leads.length) {
+      throw new Error("Lead not found");
+    }
+
+    event.leads = nextLeads;
+    refreshDuplicateFlags(event.leads);
+    await writeJson(eventFilePath(eventId), event, result.sha);
+  });
+
+  const savedEvent = await getEvent(eventId);
+  await updateLeadCount(eventId, savedEvent?.leads?.length || 0);
+
+  return savedEvent;
+}
+
 async function updateEvent(eventId, updates = {}) {
   const patch = {};
 
@@ -303,4 +334,5 @@ module.exports = {
   createEvent,
   updateEvent,
   addLead,
+  deleteLead,
 };

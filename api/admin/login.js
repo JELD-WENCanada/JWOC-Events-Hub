@@ -4,6 +4,7 @@ const {
   buildSessionCookie,
   checkAdminEmail,
   createSessionToken,
+  getSessionConfigError,
   normalizeEmail,
 } = require("../lib/admin");
 
@@ -30,9 +31,11 @@ module.exports = async (req, res) => {
 
     const token = createSessionToken(email);
     if (!token) {
-      return res
-        .status(500)
-        .json({ error: "Admin session is not configured on the server" });
+      return res.status(500).json({
+        error:
+          getSessionConfigError() ||
+          "Admin session is not configured on the server",
+      });
     }
 
     res.setHeader("Set-Cookie", buildSessionCookie(token));
