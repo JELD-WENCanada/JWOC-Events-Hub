@@ -3,5 +3,20 @@
   "name": "Home Hardware - 2026",
   "date": "2026-09-16",
   "createdAt": "2026-06-11T00:00:00.000Z",
-  "leads": []
+  "leads": [
+    {
+      "id": "1ae713ff-cb45-4d45-82e9-7b1c92f93d0d",
+      "firstName": "Abrar",
+      "lastName": "Chowdhry",
+      "email": "achiwdhry@jeldwen.com",
+      "phone": "416-880-4171",
+      "company": "Ottawa Building",
+      "notes": "Google",
+      "productsOfInterest": [
+        "Jwc7500"
+      ],
+      "capturedBy": "User",
+      "capturedAt": "2026-06-12T18:26:53.895Z"
+    }
+  ]
 }
