@@ -3,5 +3,20 @@
   "name": "Home Hardware - 2026",
   "date": "2026-09-16",
   "createdAt": "2026-06-11T00:00:00.000Z",
-  "leads": []
+  "leads": [
+    {
+      "id": "a11fa68c-8c1f-4a20-ab03-3b2eba2dbf67",
+      "firstName": "Test",
+      "lastName": "Lead",
+      "email": "test@example.com",
+      "phone": "555-0100",
+      "company": "Acme",
+      "notes": "API test - delete me",
+      "productsOfInterest": [
+        "Windows"
+      ],
+      "capturedBy": "Test User",
+      "capturedAt": "2026-06-12T17:44:31.301Z"
+    }
+  ]
 }
