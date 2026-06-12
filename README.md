@@ -18,16 +18,17 @@ Simple event lead collection for JW Sales Hub. Leads are stored as JSON files in
 
 ## API
 
-| Method | Route                           | Auth   | Description                              |
-| ------ | ------------------------------- | ------ | ---------------------------------------- |
-| GET    | `/api/events`                   | No     | List events (`?includeArchived=true`)    |
-| POST   | `/api/events`                   | Bearer | Create event                             |
-| GET    | `/api/events/leaderboard`       | No     | Rep leaderboard across events            |
-| GET    | `/api/events/:id`               | No     | Get event and leads                      |
-| PATCH  | `/api/events/:id`               | Bearer | Update event name, date, or archive flag |
-| POST   | `/api/events/:id/leads`         | Bearer | Submit lead from app                     |
-| DELETE | `/api/events/:id/leads/:leadId` | Admin  | Delete a lead (signed-in dashboard only) |
-| GET    | `/api/events/:id/export`        | No     | Download leads as CSV                    |
+| Method | Route                           | Auth   | Description                                |
+| ------ | ------------------------------- | ------ | ------------------------------------------ |
+| GET    | `/api/events`                   | No     | List events (`?includeArchived=true`)      |
+| POST   | `/api/events`                   | Bearer | Create event                               |
+| GET    | `/api/events/leaderboard`       | No     | Rep leaderboard across events              |
+| GET    | `/api/events/:id`               | No     | Get event and leads                        |
+| PATCH  | `/api/events/:id`               | Bearer | Update event name, date, or archive flag   |
+| DELETE | `/api/events/:id`               | Admin  | Delete an archived event and all its leads |
+| POST   | `/api/events/:id/leads`         | Bearer | Submit lead from app                       |
+| DELETE | `/api/events/:id/leads/:leadId` | Admin  | Delete a lead (signed-in dashboard only)   |
+| GET    | `/api/events/:id/export`        | No     | Download leads as CSV                      |
 
 ## Local development
 

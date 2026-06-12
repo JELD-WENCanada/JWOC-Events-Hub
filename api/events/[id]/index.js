@@ -1,7 +1,7 @@
 const { setCorsHeaders, handleOptions } = require("../../lib/cors");
-const { requireWriteAuth } = require("../../lib/auth");
+const { requireAdminSession, requireWriteAuth } = require("../../lib/auth");
 const { parseJsonBody } = require("../../lib/request");
-const { getEvent, updateEvent } = require("../../lib/events");
+const { deleteEvent, getEvent, updateEvent } = require("../../lib/events");
 
 module.exports = async (req, res) => {
   setCorsHeaders(res);
@@ -33,11 +33,25 @@ module.exports = async (req, res) => {
       return res.status(200).json(event);
     }
 
+    if (req.method === "DELETE") {
+      if (!requireAdminSession(req, res)) {
+        return;
+      }
+
+      const result = await deleteEvent(id);
+      return res.status(200).json(result);
+    }
+
     return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     console.error("Event detail API error:", error);
     const message = error.message || "Internal server error";
-    const status = message === "Event not found" ? 404 : 400;
+    const status =
+      message === "Event not found"
+        ? 404
+        : message === "Only archived events can be deleted"
+          ? 400
+          : 400;
     return res.status(status).json({ error: message });
   }
 };

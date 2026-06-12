@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=11" />
+    <link rel="stylesheet" href="/css/style.css?v=12" />
   </head>
   <body>
     <header class="app-header">
@@ -55,6 +55,14 @@
                 hidden
               >
                 Archive
+              </button>
+              <button
+                type="button"
+                id="deleteEventButton"
+                class="btn btn-ghost btn-danger-ghost"
+                hidden
+              >
+                Delete event
               </button>
               <div class="btn-group">
                 <a id="exportCsvButton" class="btn btn-secondary" href="#"
@@ -153,7 +161,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=11"></script>
+    <script src="/js/app.js?v=12"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
@@ -175,6 +183,7 @@
       const eventLeaderboard = document.getElementById("eventLeaderboard");
       const editEventButton = document.getElementById("editEventButton");
       const archiveEventButton = document.getElementById("archiveEventButton");
+      const deleteEventButton = document.getElementById("deleteEventButton");
       const editEventDialog = document.getElementById("editEventDialog");
       const editEventForm = document.getElementById("editEventForm");
       const editEventCancel = document.getElementById("editEventCancel");
@@ -197,6 +206,7 @@
         exportJsonButton.addEventListener("click", exportFilteredJson);
         editEventButton.addEventListener("click", openEditDialog);
         archiveEventButton.addEventListener("click", toggleArchive);
+        deleteEventButton.addEventListener("click", confirmDeleteEvent);
         editEventCancel.addEventListener("click", closeEditDialog);
         editEventForm.addEventListener("submit", saveEventEdits);
         initPage();
@@ -208,6 +218,7 @@
           isAdmin = session.authenticated;
           editEventButton.hidden = !isAdmin;
           archiveEventButton.hidden = !isAdmin;
+          deleteEventButton.hidden = !isAdmin;
         } catch {
           isAdmin = false;
         }
@@ -240,6 +251,34 @@
         archiveEventButton.textContent = isEventArchived(eventData)
           ? "Restore"
           : "Archive";
+        deleteEventButton.hidden = !isAdmin || !isEventArchived(eventData);
+      }
+
+      async function confirmDeleteEvent() {
+        if (!eventData || !isEventArchived(eventData)) {
+          return;
+        }
+
+        const leadCount = (eventData.leads || []).length;
+        const confirmed = window.confirm(
+          `Delete "${eventData.name}" and all ${leadCount} leads? This cannot be undone.`,
+        );
+        if (!confirmed) {
+          return;
+        }
+
+        const defaultLabel = deleteEventButton.textContent;
+        deleteEventButton.disabled = true;
+        deleteEventButton.textContent = "Deleting…";
+
+        try {
+          await deleteEvent(eventId);
+          window.location.href = "/";
+        } catch (error) {
+          showMessage("pageMessage", error.message, "error");
+          deleteEventButton.disabled = false;
+          deleteEventButton.textContent = defaultLabel;
+        }
       }
 
       function renderLeaderboard() {

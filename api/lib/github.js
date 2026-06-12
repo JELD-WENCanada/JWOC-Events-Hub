@@ -148,6 +148,46 @@ async function writeJson(filePath, content, sha) {
   return response.json();
 }
 
+async function deleteJson(filePath, sha) {
+  if (useLocalStorage()) {
+    const fullPath = localFilePath(filePath);
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath);
+    }
+    return;
+  }
+
+  if (!sha) {
+    const existing = await readJson(filePath);
+    if (!existing) {
+      return;
+    }
+    sha = existing.sha;
+  }
+
+  const { branch } = getConfig();
+  const response = await githubRequest(filePath, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: `Delete ${filePath}`,
+      sha,
+      branch,
+    }),
+  });
+
+  if (response.status === 404) {
+    return;
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `GitHub delete failed for ${filePath}: ${response.status} ${errorBody}`,
+    );
+  }
+}
+
 function isWriteConflict(error) {
   return Boolean(error && error.code === "WRITE_CONFLICT");
 }
@@ -174,6 +214,7 @@ async function withWriteRetry(operation, maxAttempts = 6) {
 }
 
 module.exports = {
+  deleteJson,
   isWriteConflict,
   readJson,
   withWriteRetry,

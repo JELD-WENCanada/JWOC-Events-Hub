@@ -240,7 +240,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=10"></script>
+    <script src="/js/app.js?v=12"></script>
     <script>
       const loginScreen = document.getElementById("loginScreen");
       const dashboard = document.getElementById("dashboard");
@@ -422,6 +422,18 @@
           );
 
           actions.append(editButton, archiveButton);
+
+          if (isEventArchived(event)) {
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "btn btn-ghost btn-small btn-danger-ghost";
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", () =>
+              confirmDeleteEvent(event, deleteButton),
+            );
+            actions.append(deleteButton);
+          }
+
           row.append(link, actions);
           eventsGrid.appendChild(row);
         });
@@ -480,6 +492,28 @@
 
         try {
           await updateEvent(event.id, { archived: nextArchived });
+          await loadEvents();
+        } catch (error) {
+          showMessage("formMessage", error.message, "error");
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      }
+
+      async function confirmDeleteEvent(event, button) {
+        const confirmed = window.confirm(
+          `Delete "${event.name}" and all ${event.leadCount || 0} leads? This cannot be undone.`,
+        );
+        if (!confirmed) {
+          return;
+        }
+
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Deleting…";
+
+        try {
+          await deleteEvent(event.id);
           await loadEvents();
         } catch (error) {
           showMessage("formMessage", error.message, "error");

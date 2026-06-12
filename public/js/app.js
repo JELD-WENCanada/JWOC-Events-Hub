@@ -346,6 +346,12 @@ async function deleteLead(eventId, leadId) {
   );
 }
 
+async function deleteEvent(eventId) {
+  return apiRequest(`/api/events/${encodeURIComponent(eventId)}`, {
+    method: "DELETE",
+  });
+}
+
 async function fetchRepLeaderboard(includeArchived = false) {
   const query = includeArchived ? "?includeArchived=true" : "";
   const data = await apiRequest(`/api/events/leaderboard${query}`);

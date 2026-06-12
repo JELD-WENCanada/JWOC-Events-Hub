@@ -8,6 +8,8 @@ const DEFAULT_ALLOWED_EMAILS = [
   "salbizre@jeldwen.com",
   "ksokolyk@jeldwen.com",
   "tyoung@jeldwen.com",
+  "jpigeon@jeldwen.com",
+  "rumiller@jeldwen.com",
 ];
 
 const LOCAL_SESSION_SECRET = "jwoc-events-hub-local-dev";

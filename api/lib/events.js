@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const { findDuplicateMatch, refreshDuplicateFlags } = require("./leads");
-const { readJson, withWriteRetry, writeJson } = require("./github");
+const { readJson, withWriteRetry, writeJson, deleteJson } = require("./github");
 
 const INDEX_PATH = "data/events-index.json";
 
@@ -230,6 +230,40 @@ async function deleteLead(eventId, leadId) {
   return savedEvent;
 }
 
+async function deleteEvent(eventId) {
+  const event = await getEvent(eventId);
+  if (!event) {
+    throw new Error("Event not found");
+  }
+
+  if (!isEventArchived(event)) {
+    throw new Error("Only archived events can be deleted");
+  }
+
+  const filePath = eventFilePath(eventId);
+  const fileResult = await readJson(filePath);
+
+  await withWriteRetry(async () => {
+    const indexResult = await getEventsIndex();
+    const index = indexResult.data;
+    const events = index.events || [];
+    const nextEvents = events.filter((item) => item.id !== eventId);
+
+    if (nextEvents.length === events.length) {
+      throw new Error("Event not found");
+    }
+
+    index.events = nextEvents;
+    await saveEventsIndex(index, indexResult.sha);
+  });
+
+  if (fileResult) {
+    await deleteJson(filePath, fileResult.sha);
+  }
+
+  return { id: eventId, deleted: true };
+}
+
 async function updateEvent(eventId, updates = {}) {
   const patch = {};
 
@@ -332,6 +366,7 @@ module.exports = {
   listEvents,
   getEvent,
   createEvent,
+  deleteEvent,
   updateEvent,
   addLead,
   deleteLead,
