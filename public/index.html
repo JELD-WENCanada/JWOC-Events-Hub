@@ -4,40 +4,59 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=3" />
+    <link rel="stylesheet" href="/css/style.css?v=12" />
   </head>
-  <body>
-    <section id="loginScreen" class="login-screen">
-      <div class="brand-block">
-        <img
-          src="/images/jw-logo.png"
-          alt="JELD-WEN"
-          class="brand-logo"
-          width="250"
-          height="100"
-        />
-        <p class="brand-subtitle">Events Hub</p>
-      </div>
+  <body class="session-pending">
+    <div id="appLoading" class="app-loading" aria-live="polite">
+      <div class="skeleton-block skeleton-header"></div>
+      <div class="skeleton-block skeleton-metric"></div>
+      <div class="skeleton-block skeleton-metric"></div>
+      <div class="skeleton-block skeleton-row"></div>
+      <div class="skeleton-block skeleton-row"></div>
+      <div class="skeleton-block skeleton-row"></div>
+    </div>
 
-      <form id="loginForm" class="login-form">
-        <div>
-          <label class="field-label" for="adminEmail">Email</label>
-          <input
-            id="adminEmail"
-            name="email"
-            type="email"
-            required
-            autocomplete="email"
-            placeholder="Enter your email"
+    <div id="loginScreen" class="login-screen" hidden>
+      <div class="login-brand">
+        <div class="login-brand-content">
+          <img
+            src="/images/jw-logo.png"
+            alt="JELD-WEN"
+            class="login-brand-logo"
+            width="1000"
+            height="138"
           />
-          <p class="field-hint">Use your JELD-WEN email to continue.</p>
+          <h1 class="login-brand-title">Events Hub</h1>
+          <p class="login-brand-copy">
+            Manage event leads, track rep performance, and export contacts from
+            one place.
+          </p>
         </div>
-        <button type="submit" id="loginButton" class="btn btn-primary">
-          Continue
-        </button>
-      </form>
-      <div id="loginMessage" class="message" style="display: none"></div>
-    </section>
+      </div>
+      <div class="login-panel">
+        <div class="login-card">
+          <h2 class="login-card-title">Sign in</h2>
+          <p class="login-card-subtitle">Use your authorized work email</p>
+          <form id="loginForm" class="login-form">
+            <div>
+              <label class="field-label" for="adminEmail">Email</label>
+              <input
+                id="adminEmail"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@jeldwen.com"
+              />
+            </div>
+            <button type="submit" id="loginButton" class="btn btn-primary">
+              Continue
+            </button>
+          </form>
+          <div id="loginMessage" class="message" hidden></div>
+        </div>
+      </div>
+    </div>
 
     <div id="dashboard" hidden>
       <header class="app-header">
@@ -47,21 +66,37 @@
               src="/images/jw-logo.png"
               alt=""
               class="app-header-logo"
-              width="36"
-              height="36"
+              width="28"
+              height="28"
             />
             <h1 class="nav-title">Events Hub</h1>
           </div>
-          <button type="button" id="signOutButton" class="btn btn-text">
-            Sign out
-          </button>
+          <div class="app-header-actions">
+            <div id="userPill" class="user-pill" hidden>
+              <span id="userAvatar" class="user-avatar"></span>
+              <span id="userEmail" class="user-email"></span>
+            </div>
+            <button type="button" id="signOutButton" class="btn btn-ghost">
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
       <main class="app-content">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Overview</h2>
+            <p class="page-subtitle">Events and lead capture at a glance</p>
+          </div>
+          <button type="button" id="newEventButton" class="btn btn-primary">
+            + New event
+          </button>
+        </div>
+
         <div class="metrics">
           <div class="metric-card">
-            <span class="metric-label">Events</span>
+            <span class="metric-label">Active events</span>
             <span id="totalEventsStat" class="metric-value">0</span>
           </div>
           <div class="metric-card">
@@ -74,95 +109,195 @@
           </div>
         </div>
 
-        <section class="section-block">
-          <h2 class="section-title">Upcoming Events</h2>
-          <div id="eventsGrid" class="event-grid"></div>
-          <div id="eventsEmpty" class="empty-state" style="display: none">
-            No events yet. Create one below to get started.
-          </div>
-        </section>
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Rep leaderboard</h2>
+            </div>
+            <div class="panel-body">
+              <div id="globalLeaderboard"></div>
+            </div>
+          </section>
 
-        <section class="card">
-          <h2 class="section-title">New Event</h2>
-          <form id="createEventForm">
-            <div class="form-grid">
-              <div class="field">
-                <label class="field-label" for="eventName">Name</label>
-                <input
-                  id="eventName"
-                  name="name"
-                  type="text"
-                  required
-                  placeholder="Toronto Home Show 2026"
-                />
-              </div>
-              <div class="field">
-                <label class="field-label" for="eventDate">Date</label>
-                <input id="eventDate" name="date" type="date" required />
+          <section class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Events</h2>
+              <div class="toolbar">
+                <label class="toolbar-control">
+                  <span class="toolbar-label">Sort</span>
+                  <select id="eventSort" class="toolbar-select">
+                    <option value="date-desc">Newest</option>
+                    <option value="date-asc">Oldest</option>
+                    <option value="leads-desc">Most leads</option>
+                    <option value="name-asc">Name</option>
+                  </select>
+                </label>
               </div>
             </div>
-            <div class="field">
-              <label class="field-label" for="eventId"
-                >ID <span class="hint">optional</span></label
-              >
-              <input
-                id="eventId"
-                name="id"
-                type="text"
-                placeholder="toronto-home-show-2026"
-              />
+            <div class="panel-body">
+              <div class="tab-bar" role="tablist" aria-label="Event groups">
+                <button
+                  type="button"
+                  class="tab-button is-active"
+                  data-tab="upcoming"
+                  role="tab"
+                  aria-selected="true"
+                >
+                  Upcoming
+                </button>
+                <button
+                  type="button"
+                  class="tab-button"
+                  data-tab="past"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  Past
+                </button>
+                <button
+                  type="button"
+                  class="tab-button"
+                  data-tab="archived"
+                  role="tab"
+                  aria-selected="false"
+                >
+                  Archived
+                </button>
+              </div>
+
+              <div id="eventsGrid" class="event-grid"></div>
+              <div id="eventsEmpty" class="empty-state" hidden>
+                No events in this group.
+              </div>
             </div>
-            <div class="actions">
-              <button
-                type="submit"
-                id="createEventButton"
-                class="btn btn-primary"
-              >
-                Create event
-              </button>
-            </div>
-          </form>
-          <div id="formMessage" class="message" style="display: none"></div>
-        </section>
+          </section>
+        </div>
+
+        <div id="formMessage" class="message" hidden></div>
       </main>
     </div>
 
-    <script src="/js/app.js?v=3"></script>
+    <dialog id="createEventDialog" class="modal">
+      <form id="createEventForm" method="dialog" class="modal-card">
+        <h2 class="modal-title">New event</h2>
+        <div class="field">
+          <label class="field-label" for="eventName">Name</label>
+          <input
+            id="eventName"
+            name="name"
+            type="text"
+            required
+            placeholder="Toronto Home Show 2026"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="eventDate">Date</label>
+          <input id="eventDate" name="date" type="date" required />
+        </div>
+        <div class="field">
+          <label class="field-label" for="eventId"
+            >ID <span class="hint">optional</span></label
+          >
+          <input
+            id="eventId"
+            name="id"
+            type="text"
+            placeholder="toronto-home-show-2026"
+          />
+        </div>
+        <div id="createEventMessage" class="message" hidden></div>
+        <div class="modal-actions">
+          <button type="button" id="createEventCancel" class="btn btn-ghost">
+            Cancel
+          </button>
+          <button type="submit" id="createEventButton" class="btn btn-primary">
+            Create event
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="editEventDialog" class="modal">
+      <form id="editEventForm" method="dialog" class="modal-card">
+        <h2 class="modal-title">Edit event</h2>
+        <div class="field">
+          <label class="field-label" for="editEventName">Name</label>
+          <input id="editEventName" name="name" type="text" required />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editEventDate">Date</label>
+          <input id="editEventDate" name="date" type="date" required />
+        </div>
+        <div id="editEventMessage" class="message" hidden></div>
+        <div class="modal-actions">
+          <button type="button" id="editEventCancel" class="btn btn-ghost">
+            Cancel
+          </button>
+          <button type="submit" id="editEventSave" class="btn btn-primary">
+            Save changes
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/js/app.js?v=10"></script>
     <script>
       const loginScreen = document.getElementById("loginScreen");
       const dashboard = document.getElementById("dashboard");
       const loginForm = document.getElementById("loginForm");
       const signOutButton = document.getElementById("signOutButton");
+      const userPill = document.getElementById("userPill");
+      const userAvatar = document.getElementById("userAvatar");
+      const userEmail = document.getElementById("userEmail");
+      const newEventButton = document.getElementById("newEventButton");
+      const createEventDialog = document.getElementById("createEventDialog");
       const createEventForm = document.getElementById("createEventForm");
+      const createEventCancel = document.getElementById("createEventCancel");
       const eventsGrid = document.getElementById("eventsGrid");
       const eventsEmpty = document.getElementById("eventsEmpty");
       const totalEventsStat = document.getElementById("totalEventsStat");
       const totalLeadsStat = document.getElementById("totalLeadsStat");
       const avgLeadsStat = document.getElementById("avgLeadsStat");
+      const globalLeaderboard = document.getElementById("globalLeaderboard");
+      const eventSort = document.getElementById("eventSort");
+      const editEventDialog = document.getElementById("editEventDialog");
+      const editEventForm = document.getElementById("editEventForm");
+      const editEventCancel = document.getElementById("editEventCancel");
 
-      function setAuthenticated(isAuthenticated) {
-        loginScreen.hidden = isAuthenticated;
-        dashboard.hidden = !isAuthenticated;
+      let allEvents = [];
+      let activeTab = "upcoming";
+      let editingEventId = null;
+
+      function userInitial(email) {
+        const local = String(email || "").split("@")[0] || "";
+        return (local.charAt(0) || "?").toUpperCase();
       }
 
-      function eventYear(dateValue) {
-        const date = new Date(dateValue);
-        if (Number.isNaN(date.getTime())) {
-          return "";
-        }
-        return String(date.getFullYear());
+      function setAuthenticated(isAuthenticated, email = "") {
+        document.body.classList.toggle("app-authenticated", isAuthenticated);
+        loginScreen.hidden = isAuthenticated;
+        dashboard.hidden = !isAuthenticated;
+        userPill.hidden = !isAuthenticated || !email;
+        userEmail.textContent = email || "";
+        userAvatar.textContent = userInitial(email);
+      }
+
+      function finishSessionInit() {
+        document.body.classList.remove("session-pending");
       }
 
       async function initSession() {
         try {
           const session = await getAdminSession();
-          setAuthenticated(session.authenticated);
+          setAuthenticated(session.authenticated, session.email);
           if (session.authenticated) {
             await loadEvents();
           }
         } catch (error) {
           setAuthenticated(false);
           showMessage("loginMessage", error.message, "error");
+        } finally {
+          finishSessionInit();
         }
       }
 
@@ -171,66 +306,224 @@
 
         const button = document.getElementById("loginButton");
         const formData = new FormData(loginForm);
+        const defaultLabel = button.textContent;
         button.disabled = true;
+        button.textContent = "Signing in…";
+        showMessage("loginMessage", "", "success");
 
         try {
-          loginAdmin(String(formData.get("email") || ""));
+          const session = await loginAdmin(String(formData.get("email") || ""));
           loginForm.reset();
-          setAuthenticated(true);
-          showMessage("loginMessage", "", "success");
+          setAuthenticated(true, session.email);
           await loadEvents();
         } catch (error) {
           setAuthenticated(false);
           showMessage("loginMessage", error.message, "error");
         } finally {
           button.disabled = false;
+          button.textContent = defaultLabel;
         }
       });
 
-      signOutButton.addEventListener("click", () => {
-        logoutAdmin();
-        setAuthenticated(false);
-        eventsGrid.innerHTML = "";
+      signOutButton.addEventListener("click", async () => {
+        buttonLoading(signOutButton, true, "Signing out…");
+        try {
+          await logoutAdmin();
+        } finally {
+          buttonLoading(signOutButton, false, "Sign out");
+          setAuthenticated(false);
+          eventsGrid.innerHTML = "";
+          eventsEmpty.hidden = true;
+        }
       });
+
+      function buttonLoading(button, isLoading, label) {
+        button.disabled = isLoading;
+        button.textContent = label;
+      }
+
+      function updateMetrics(events) {
+        const activeEvents = events.filter((event) => !isEventArchived(event));
+        const totalLeads = activeEvents.reduce(
+          (sum, event) => sum + (event.leadCount || 0),
+          0,
+        );
+        const avgLeads =
+          activeEvents.length > 0
+            ? (totalLeads / activeEvents.length).toFixed(1)
+            : "0";
+
+        totalEventsStat.textContent = String(activeEvents.length);
+        totalLeadsStat.textContent = String(totalLeads);
+        avgLeadsStat.textContent = avgLeads;
+      }
+
+      async function loadLeaderboard() {
+        try {
+          const leaderboard = await fetchRepLeaderboard();
+          globalLeaderboard.innerHTML = renderLeaderboardHtml(leaderboard, {
+            emptyMessage: "No leads captured across events yet.",
+          });
+        } catch (error) {
+          globalLeaderboard.innerHTML = `<p class="leaderboard-empty">${escapeHtml(error.message)}</p>`;
+        }
+      }
+
+      function renderEvents() {
+        const filtered = sortEvents(
+          filterEventsByTab(allEvents, activeTab),
+          eventSort.value,
+        );
+
+        eventsEmpty.hidden = filtered.length > 0;
+        eventsGrid.innerHTML = "";
+
+        filtered.forEach((event) => {
+          const row = document.createElement("div");
+          row.className = "event-card-row";
+
+          const link = document.createElement("a");
+          link.className = "event-card";
+          link.href = `/event.html?id=${encodeURIComponent(event.id)}`;
+
+          const archivedBadge = isEventArchived(event)
+            ? '<span class="status-badge status-archived">Archived</span>'
+            : "";
+
+          link.innerHTML = `
+            <span class="event-year-badge">${escapeHtml(eventYear(event.date))}</span>
+            <div class="event-card-body">
+              <div class="event-card-title-row">
+                <h3 class="event-card-title">${escapeHtml(event.name)}</h3>
+                ${archivedBadge}
+              </div>
+              <p class="event-card-meta">${escapeHtml(formatDate(event.date))}</p>
+            </div>
+            <span class="event-card-stat">${event.leadCount || 0} leads</span>
+          `;
+
+          const actions = document.createElement("div");
+          actions.className = "event-card-actions";
+
+          const editButton = document.createElement("button");
+          editButton.type = "button";
+          editButton.className = "btn btn-ghost btn-small";
+          editButton.textContent = "Edit";
+          editButton.addEventListener("click", () => openEditDialog(event));
+
+          const archiveButton = document.createElement("button");
+          archiveButton.type = "button";
+          archiveButton.className = "btn btn-ghost btn-small";
+          archiveButton.textContent = isEventArchived(event)
+            ? "Restore"
+            : "Archive";
+          archiveButton.addEventListener("click", () =>
+            toggleArchive(event, archiveButton),
+          );
+
+          actions.append(editButton, archiveButton);
+          row.append(link, actions);
+          eventsGrid.appendChild(row);
+        });
+      }
 
       async function loadEvents() {
         try {
-          const data = await apiRequest("/api/events");
-          const events = data.events || [];
-          const totalLeads = events.reduce(
-            (sum, event) => sum + (event.leadCount || 0),
-            0,
-          );
-          const avgLeads =
-            events.length > 0 ? (totalLeads / events.length).toFixed(1) : "0";
-
-          totalEventsStat.textContent = String(events.length);
-          totalLeadsStat.textContent = String(totalLeads);
-          avgLeadsStat.textContent = avgLeads;
-
-          eventsEmpty.style.display = events.length ? "none" : "block";
-          eventsGrid.innerHTML = "";
-
-          events.forEach((event) => {
-            const card = document.createElement("a");
-            card.className = "event-card";
-            card.href = `/event.html?id=${encodeURIComponent(event.id)}`;
-            card.innerHTML = `
-              <div class="event-card-well">
-                <span class="event-year">${escapeHtml(eventYear(event.date))}</span>
-              </div>
-              <h3 class="event-card-title">${escapeHtml(event.name)}</h3>
-              <p class="event-card-meta">
-                <span>${escapeHtml(formatDate(event.date))} · ${event.leadCount || 0} leads</span>
-                <span class="event-card-chevron" aria-hidden="true">›</span>
-              </p>
-            `;
-            eventsGrid.appendChild(card);
-          });
+          const data = await apiRequest("/api/events?includeArchived=true");
+          allEvents = data.events || [];
+          updateMetrics(allEvents);
+          renderEvents();
+          await loadLeaderboard();
         } catch (error) {
           showMessage("formMessage", error.message, "error");
         }
       }
+
+      function setActiveTab(tab) {
+        activeTab = tab;
+        document.querySelectorAll(".tab-button").forEach((button) => {
+          const isActive = button.dataset.tab === tab;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-selected", String(isActive));
+        });
+        renderEvents();
+      }
+
+      function openCreateDialog() {
+        createEventForm.reset();
+        showMessage("createEventMessage", "", "success");
+        createEventDialog.showModal();
+      }
+
+      function closeCreateDialog() {
+        createEventDialog.close();
+      }
+
+      function openEditDialog(event) {
+        editingEventId = event.id;
+        document.getElementById("editEventName").value = event.name;
+        document.getElementById("editEventDate").value = event.date;
+        showMessage("editEventMessage", "", "success");
+        editEventDialog.showModal();
+      }
+
+      function closeEditDialog() {
+        editingEventId = null;
+        editEventDialog.close();
+      }
+
+      async function toggleArchive(event, button) {
+        const nextArchived = !isEventArchived(event);
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = nextArchived ? "Archiving…" : "Restoring…";
+
+        try {
+          await updateEvent(event.id, { archived: nextArchived });
+          await loadEvents();
+        } catch (error) {
+          showMessage("formMessage", error.message, "error");
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      }
+
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () =>
+          setActiveTab(button.dataset.tab),
+        );
+      });
+
+      eventSort.addEventListener("change", renderEvents);
+      newEventButton.addEventListener("click", openCreateDialog);
+      createEventCancel.addEventListener("click", closeCreateDialog);
+      editEventCancel.addEventListener("click", closeEditDialog);
+
+      editEventForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!editingEventId) {
+          return;
+        }
+
+        const button = document.getElementById("editEventSave");
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Saving…";
+
+        try {
+          await updateEvent(editingEventId, {
+            name: document.getElementById("editEventName").value,
+            date: document.getElementById("editEventDate").value,
+          });
+          closeEditDialog();
+          await loadEvents();
+        } catch (error) {
+          showMessage("editEventMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      });
 
       createEventForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -247,7 +540,9 @@
         }
 
         const button = document.getElementById("createEventButton");
+        const defaultLabel = button.textContent;
         button.disabled = true;
+        button.textContent = "Creating…";
 
         try {
           await apiRequest("/api/events", {
@@ -258,13 +553,14 @@
             body: JSON.stringify(payload),
           });
 
-          createEventForm.reset();
+          closeCreateDialog();
           showMessage("formMessage", "Event created.", "success");
           await loadEvents();
         } catch (error) {
-          showMessage("formMessage", error.message, "error");
+          showMessage("createEventMessage", error.message, "error");
         } finally {
           button.disabled = false;
+          button.textContent = defaultLabel;
         }
       });
 

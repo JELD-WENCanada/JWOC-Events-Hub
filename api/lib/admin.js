@@ -62,10 +62,6 @@ function checkAdminEmail(email) {
     return false;
   }
 
-  if (normalized.endsWith("@jeldwen.com")) {
-    return true;
-  }
-
   return getAllowedEmails().has(normalized);
 }
 

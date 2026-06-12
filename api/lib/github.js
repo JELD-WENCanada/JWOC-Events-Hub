@@ -31,8 +31,22 @@ function readJsonLocal(relativePath) {
   return { data, sha: String(fs.statSync(fullPath).mtimeMs) };
 }
 
-function writeJsonLocal(relativePath, content) {
+function createWriteConflictError(filePath) {
+  const error = new Error(`Write conflict for ${filePath}`);
+  error.code = "WRITE_CONFLICT";
+  return error;
+}
+
+function writeJsonLocal(relativePath, content, expectedSha) {
   const fullPath = localFilePath(relativePath);
+
+  if (expectedSha && fs.existsSync(fullPath)) {
+    const currentSha = String(fs.statSync(fullPath).mtimeMs);
+    if (currentSha !== expectedSha) {
+      throw createWriteConflictError(relativePath);
+    }
+  }
+
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, JSON.stringify(content, null, 2) + "\n");
   return { sha: String(fs.statSync(fullPath).mtimeMs) };
@@ -98,7 +112,7 @@ async function readJson(filePath) {
 
 async function writeJson(filePath, content, sha) {
   if (useLocalStorage()) {
-    return writeJsonLocal(filePath, content);
+    return writeJsonLocal(filePath, content, sha);
   }
 
   const { branch } = getConfig();
@@ -120,6 +134,10 @@ async function writeJson(filePath, content, sha) {
     body: JSON.stringify(body),
   });
 
+  if (response.status === 409) {
+    throw createWriteConflictError(filePath);
+  }
+
   if (!response.ok) {
     const errorBody = await response.text();
     throw new Error(
@@ -130,4 +148,34 @@ async function writeJson(filePath, content, sha) {
   return response.json();
 }
 
-module.exports = { readJson, writeJson };
+function isWriteConflict(error) {
+  return Boolean(error && error.code === "WRITE_CONFLICT");
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withWriteRetry(operation, maxAttempts = 6) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isWriteConflict(error) || attempt === maxAttempts - 1) {
+        throw error;
+      }
+
+      const backoffMs = 40 * 2 ** attempt + Math.floor(Math.random() * 40);
+      await sleep(backoffMs);
+    }
+  }
+
+  throw new Error("Write retry exhausted");
+}
+
+module.exports = {
+  isWriteConflict,
+  readJson,
+  withWriteRetry,
+  writeJson,
+};

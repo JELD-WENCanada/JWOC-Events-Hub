@@ -1,5 +1,7 @@
 const { setCorsHeaders, handleOptions } = require("../../lib/cors");
-const { getEvent } = require("../../lib/events");
+const { requireWriteAuth } = require("../../lib/auth");
+const { parseJsonBody } = require("../../lib/request");
+const { getEvent, updateEvent } = require("../../lib/events");
 
 module.exports = async (req, res) => {
   setCorsHeaders(res);
@@ -8,21 +10,34 @@ module.exports = async (req, res) => {
     return;
   }
 
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
   try {
     const { id } = req.query;
-    const event = await getEvent(id);
 
-    if (!event) {
-      return res.status(404).json({ error: "Event not found" });
+    if (req.method === "GET") {
+      const event = await getEvent(id);
+
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      return res.status(200).json(event);
     }
 
-    return res.status(200).json(event);
+    if (req.method === "PATCH") {
+      if (!requireWriteAuth(req, res)) {
+        return;
+      }
+
+      const body = await parseJsonBody(req);
+      const event = await updateEvent(id, body);
+      return res.status(200).json(event);
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
     console.error("Event detail API error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    const message = error.message || "Internal server error";
+    const status = message === "Event not found" ? 404 : 400;
+    return res.status(status).json({ error: message });
   }
 };

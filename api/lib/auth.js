@@ -1,8 +1,4 @@
-const { checkAdminEmail, checkAdminSession } = require("./admin");
-
-function checkAdminEmailHeader(req) {
-  return checkAdminEmail(req.headers["x-admin-email"]);
-}
+const { checkAdminSession } = require("./admin");
 
 function checkApiKey(req) {
   const expected = process.env.API_KEY;
@@ -19,9 +15,7 @@ function checkApiKey(req) {
 }
 
 function checkWriteAuth(req) {
-  return (
-    checkApiKey(req) || checkAdminSession(req) || checkAdminEmailHeader(req)
-  );
+  return checkApiKey(req) || checkAdminSession(req);
 }
 
 function requireApiKey(req, res) {

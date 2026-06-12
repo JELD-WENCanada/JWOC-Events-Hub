@@ -1,6 +1,7 @@
 const { setCorsHeaders, handleOptions } = require("../../lib/cors");
-const { getEvent } = require("../../lib/events");
 const { leadsToCsv } = require("../../lib/csv");
+const { getEvent } = require("../../lib/events");
+const { filterLeads, parseLeadFilters } = require("../../lib/leads");
 
 module.exports = async (req, res) => {
   setCorsHeaders(res);
@@ -21,7 +22,9 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: "Event not found" });
     }
 
-    const csv = leadsToCsv(event.leads || []);
+    const filters = parseLeadFilters(req.query);
+    const leads = filterLeads(event.leads || [], filters);
+    const csv = leadsToCsv(leads);
     const filename = `${id}-leads.csv`;
 
     res.setHeader("Content-Type", "text/csv; charset=utf-8");

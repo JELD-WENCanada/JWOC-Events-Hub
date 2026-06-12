@@ -4,140 +4,467 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=3" />
+    <link rel="stylesheet" href="/css/style.css?v=10" />
   </head>
   <body>
     <header class="app-header">
       <div class="app-header-inner">
-        <div class="app-header-brand">
+        <a href="/" class="app-header-brand app-header-brand-link">
           <img
             src="/images/jw-logo.png"
             alt=""
             class="app-header-logo"
-            width="36"
-            height="36"
+            width="28"
+            height="28"
           />
           <h1 class="nav-title">Events Hub</h1>
+        </a>
+        <div class="app-header-actions">
+          <a href="/" class="btn btn-ghost">All events</a>
         </div>
-        <a href="/" class="btn btn-text">← Events</a>
       </div>
     </header>
 
     <main class="app-content">
-      <section class="card">
-        <div class="detail-head">
-          <div>
-            <h1 id="eventTitle">Event</h1>
-            <p id="eventMeta" class="subtitle"></p>
-          </div>
-          <div class="actions">
-            <a id="exportCsvButton" class="btn btn-secondary" href="#"
-              >Export CSV</a
-            >
-            <button
-              type="button"
-              id="exportJsonButton"
-              class="btn btn-secondary"
-            >
-              JSON
-            </button>
-          </div>
-        </div>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Events</a>
+        <span class="breadcrumb-sep">/</span>
+        <span id="breadcrumbCurrent">Event</span>
+      </nav>
 
-        <div id="leadsTableWrap" class="table-wrap"></div>
-        <div id="leadsEmpty" class="empty-state" style="display: none">
-          No leads captured yet for this event.
+      <section class="panel">
+        <div class="panel-body">
+          <div class="detail-head">
+            <div>
+              <h2 id="eventTitle" class="detail-title">Event</h2>
+              <p id="eventMeta" class="subtitle"></p>
+            </div>
+            <div class="actions">
+              <button
+                type="button"
+                id="editEventButton"
+                class="btn btn-ghost"
+                hidden
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                id="archiveEventButton"
+                class="btn btn-ghost"
+                hidden
+              >
+                Archive
+              </button>
+              <div class="btn-group">
+                <a id="exportCsvButton" class="btn btn-secondary" href="#"
+                  >CSV</a
+                >
+                <button
+                  type="button"
+                  id="exportJsonButton"
+                  class="btn btn-secondary"
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <section
+            id="eventLeaderboardSection"
+            class="leaderboard-inline"
+            hidden
+          >
+            <h3 class="leaderboard-inline-title">Rep leaderboard</h3>
+            <div id="eventLeaderboard"></div>
+          </section>
+
+          <form id="leadFilters" class="filter-bar">
+            <input
+              id="searchFilter"
+              name="search"
+              class="filter-search"
+              type="search"
+              placeholder="Search contacts…"
+            />
+            <div class="filter-chips">
+              <label class="filter-chip">
+                <input id="hasPhoneFilter" name="hasPhone" type="checkbox" />
+                Has phone
+              </label>
+              <label class="filter-chip">
+                <input id="hasEmailFilter" name="hasEmail" type="checkbox" />
+                Has email
+              </label>
+              <label class="filter-chip">
+                <input
+                  id="hasCompanyFilter"
+                  name="hasCompany"
+                  type="checkbox"
+                />
+                Has company
+              </label>
+              <label class="filter-chip">
+                <input
+                  id="duplicatesOnlyFilter"
+                  name="duplicatesOnly"
+                  type="checkbox"
+                />
+                Duplicates
+              </label>
+            </div>
+            <p id="filterSummary" class="filter-summary"></p>
+          </form>
+
+          <div id="leadsTableWrap" class="table-wrap"></div>
+          <div id="leadsPagination" class="pagination" hidden></div>
+          <div id="leadsEmpty" class="empty-state" hidden>
+            No leads captured yet for this event.
+          </div>
+          <div id="leadsFilteredEmpty" class="empty-state" hidden>
+            No contacts match the current filters.
+          </div>
+          <div id="pageMessage" class="message error" hidden></div>
         </div>
-        <div id="pageMessage" class="message error" style="display: none"></div>
       </section>
     </main>
 
-    <script src="/js/app.js?v=3"></script>
+    <dialog id="editEventDialog" class="modal">
+      <form id="editEventForm" method="dialog" class="modal-card">
+        <h2 class="modal-title">Edit event</h2>
+        <div class="field">
+          <label class="field-label" for="editEventName">Name</label>
+          <input id="editEventName" name="name" type="text" required />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editEventDate">Date</label>
+          <input id="editEventDate" name="date" type="date" required />
+        </div>
+        <div id="editEventMessage" class="message" hidden></div>
+        <div class="modal-actions">
+          <button type="button" id="editEventCancel" class="btn btn-ghost">
+            Cancel
+          </button>
+          <button type="submit" id="editEventSave" class="btn btn-primary">
+            Save changes
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/js/app.js?v=10"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
 
+      const breadcrumbCurrent = document.getElementById("breadcrumbCurrent");
       const eventTitle = document.getElementById("eventTitle");
       const eventMeta = document.getElementById("eventMeta");
       const leadsTableWrap = document.getElementById("leadsTableWrap");
       const leadsEmpty = document.getElementById("leadsEmpty");
+      const leadsFilteredEmpty = document.getElementById("leadsFilteredEmpty");
       const exportCsvButton = document.getElementById("exportCsvButton");
       const exportJsonButton = document.getElementById("exportJsonButton");
+      const leadFilters = document.getElementById("leadFilters");
+      const filterSummary = document.getElementById("filterSummary");
+      const leadsPagination = document.getElementById("leadsPagination");
+      const eventLeaderboardSection = document.getElementById(
+        "eventLeaderboardSection",
+      );
+      const eventLeaderboard = document.getElementById("eventLeaderboard");
+      const editEventButton = document.getElementById("editEventButton");
+      const archiveEventButton = document.getElementById("archiveEventButton");
+      const editEventDialog = document.getElementById("editEventDialog");
+      const editEventForm = document.getElementById("editEventForm");
+      const editEventCancel = document.getElementById("editEventCancel");
+
+      let eventData = null;
+      let isAdmin = false;
+      let leadsPage = 1;
 
       if (!eventId) {
         showMessage("pageMessage", "Missing event ID in URL.", "error");
       } else {
-        exportCsvButton.href = `/api/events/${encodeURIComponent(eventId)}/export`;
-        loadEvent();
+        leadFilters.addEventListener("input", () => {
+          leadsPage = 1;
+          renderLeads();
+        });
+        leadFilters.addEventListener("change", () => {
+          leadsPage = 1;
+          renderLeads();
+        });
+        exportJsonButton.addEventListener("click", exportFilteredJson);
+        editEventButton.addEventListener("click", openEditDialog);
+        archiveEventButton.addEventListener("click", toggleArchive);
+        editEventCancel.addEventListener("click", closeEditDialog);
+        editEventForm.addEventListener("submit", saveEventEdits);
+        initPage();
+      }
+
+      async function initPage() {
+        try {
+          const session = await getAdminSession();
+          isAdmin = session.authenticated;
+          editEventButton.hidden = !isAdmin;
+          archiveEventButton.hidden = !isAdmin;
+        } catch {
+          isAdmin = false;
+        }
+
+        await loadEvent();
       }
 
       async function loadEvent() {
         try {
-          const event = await apiRequest(
+          eventData = await apiRequest(
             `/api/events/${encodeURIComponent(eventId)}`,
           );
 
-          eventTitle.textContent = event.name;
-          eventMeta.textContent = `${formatDate(event.date)} · ${(event.leads || []).length} leads captured`;
-
-          const leads = event.leads || [];
-          leadsEmpty.style.display = leads.length ? "none" : "block";
-
-          if (!leads.length) {
-            leadsTableWrap.innerHTML = "";
-            return;
-          }
-
-          const rows = leads
-            .map((lead) => {
-              const products = Array.isArray(lead.productsOfInterest)
-                ? lead.productsOfInterest.join(", ")
-                : "";
-              return `
-                <tr>
-                  <td>${escapeHtml(lead.firstName || "")} ${escapeHtml(lead.lastName || "")}</td>
-                  <td>${escapeHtml(lead.email || "")}</td>
-                  <td class="hide-mobile">${escapeHtml(lead.phone || "")}</td>
-                  <td class="hide-mobile">${escapeHtml(lead.company || "")}</td>
-                  <td class="hide-mobile">${escapeHtml(products)}</td>
-                  <td class="hide-mobile">${escapeHtml(lead.capturedBy || "")}</td>
-                  <td>${escapeHtml(formatDateTime(lead.capturedAt))}</td>
-                </tr>
-              `;
-            })
-            .join("");
-
-          leadsTableWrap.innerHTML = `
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th class="hide-mobile">Phone</th>
-                  <th class="hide-mobile">Company</th>
-                  <th class="hide-mobile">Products</th>
-                  <th class="hide-mobile">Captured by</th>
-                  <th>Captured</th>
-                </tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          `;
-
-          exportJsonButton.addEventListener("click", () => {
-            const blob = new Blob([JSON.stringify(event, null, 2)], {
-              type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `${event.id}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-          });
+          eventTitle.textContent = eventData.name;
+          breadcrumbCurrent.textContent = eventData.name;
+          document.title = `${eventData.name} — JWOC Events Hub`;
+          updateAdminActions();
+          renderLeaderboard();
+          renderLeads();
         } catch (error) {
           showMessage("pageMessage", error.message, "error");
         }
+      }
+
+      function updateAdminActions() {
+        if (!isAdmin || !eventData) {
+          return;
+        }
+
+        archiveEventButton.textContent = isEventArchived(eventData)
+          ? "Restore"
+          : "Archive";
+      }
+
+      function renderLeaderboard() {
+        const leaderboard = buildRepLeaderboard(eventData?.leads || []);
+        eventLeaderboardSection.hidden = leaderboard.length === 0;
+        eventLeaderboard.innerHTML = renderLeaderboardHtml(leaderboard, {
+          emptyMessage: "No leads captured yet for this event.",
+        });
+      }
+
+      function openEditDialog() {
+        document.getElementById("editEventName").value = eventData.name;
+        document.getElementById("editEventDate").value = eventData.date;
+        showMessage("editEventMessage", "", "success");
+        editEventDialog.showModal();
+      }
+
+      function closeEditDialog() {
+        editEventDialog.close();
+      }
+
+      async function saveEventEdits(submitEvent) {
+        submitEvent.preventDefault();
+
+        const button = document.getElementById("editEventSave");
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Saving…";
+
+        try {
+          eventData = await updateEvent(eventId, {
+            name: document.getElementById("editEventName").value,
+            date: document.getElementById("editEventDate").value,
+          });
+          eventTitle.textContent = eventData.name;
+          breadcrumbCurrent.textContent = eventData.name;
+          document.title = `${eventData.name} — JWOC Events Hub`;
+          closeEditDialog();
+          renderLeads();
+        } catch (error) {
+          showMessage("editEventMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      }
+
+      async function toggleArchive() {
+        const nextArchived = !isEventArchived(eventData);
+        const defaultLabel = archiveEventButton.textContent;
+        archiveEventButton.disabled = true;
+        archiveEventButton.textContent = nextArchived
+          ? "Archiving…"
+          : "Restoring…";
+
+        try {
+          eventData = await updateEvent(eventId, { archived: nextArchived });
+          updateAdminActions();
+        } catch (error) {
+          showMessage("pageMessage", error.message, "error");
+        } finally {
+          archiveEventButton.disabled = false;
+          archiveEventButton.textContent = defaultLabel;
+          updateAdminActions();
+        }
+      }
+
+      function renderPaginationControls(pagination) {
+        if (pagination.total <= pagination.pageSize) {
+          leadsPagination.hidden = true;
+          leadsPagination.innerHTML = "";
+          return;
+        }
+
+        leadsPagination.hidden = false;
+        leadsPagination.innerHTML = `
+          <button type="button" class="btn btn-ghost btn-small" data-page="prev" ${pagination.page <= 1 ? "disabled" : ""}>
+            Previous
+          </button>
+          <span class="pagination-summary">Page ${pagination.page} of ${pagination.totalPages}</span>
+          <button type="button" class="btn btn-ghost btn-small" data-page="next" ${pagination.page >= pagination.totalPages ? "disabled" : ""}>
+            Next
+          </button>
+        `;
+
+        leadsPagination
+          .querySelector('[data-page="prev"]')
+          ?.addEventListener("click", () => {
+            leadsPage = Math.max(1, pagination.page - 1);
+            renderLeads();
+          });
+        leadsPagination
+          .querySelector('[data-page="next"]')
+          ?.addEventListener("click", () => {
+            leadsPage = Math.min(pagination.totalPages, pagination.page + 1);
+            renderLeads();
+          });
+      }
+
+      function renderLeads() {
+        if (!eventData) {
+          return;
+        }
+
+        const allLeads = eventData.leads || [];
+        const filters = getLeadFiltersFromForm(leadFilters);
+        const filteredLeads = filterLeads(allLeads, filters);
+        const duplicateIds = getDuplicateLeadIds(allLeads);
+        const hasActiveFilters =
+          filters.search ||
+          filters.hasPhone ||
+          filters.hasEmail ||
+          filters.hasCompany ||
+          filters.duplicatesOnly;
+        const pagination = paginate(filteredLeads, leadsPage);
+        const pageLeads = pagination.items;
+
+        const archivedLabel = isEventArchived(eventData) ? " · Archived" : "";
+        eventMeta.textContent = `${formatDate(eventData.date)} · ${allLeads.length} leads${archivedLabel}`;
+        exportCsvButton.href = buildLeadExportUrl(eventId, filters);
+
+        leadsEmpty.hidden = allLeads.length > 0;
+        leadsFilteredEmpty.hidden =
+          allLeads.length === 0 ||
+          filteredLeads.length > 0 ||
+          !hasActiveFilters;
+        leadFilters.hidden = allLeads.length === 0;
+
+        if (!allLeads.length) {
+          filterSummary.textContent = "";
+          leadsTableWrap.innerHTML = "";
+          leadsPagination.hidden = true;
+          return;
+        }
+
+        const rangeStart = filteredLeads.length
+          ? (pagination.page - 1) * pagination.pageSize + 1
+          : 0;
+        const rangeEnd = Math.min(
+          pagination.page * pagination.pageSize,
+          filteredLeads.length,
+        );
+
+        filterSummary.textContent = hasActiveFilters
+          ? `Showing ${rangeStart}–${rangeEnd} of ${filteredLeads.length} filtered (${allLeads.length} total)`
+          : filteredLeads.length > pagination.pageSize
+            ? `Showing ${rangeStart}–${rangeEnd} of ${allLeads.length}`
+            : `${allLeads.length} contacts`;
+
+        if (!filteredLeads.length) {
+          leadsTableWrap.innerHTML = "";
+          leadsPagination.hidden = true;
+          return;
+        }
+
+        const rows = pageLeads
+          .map((lead) => {
+            const products = Array.isArray(lead.productsOfInterest)
+              ? lead.productsOfInterest.join(", ")
+              : "";
+            const isDuplicate = duplicateIds.has(lead.id);
+            const duplicateBadge = isDuplicate
+              ? '<span class="duplicate-badge">Duplicate</span>'
+              : "";
+
+            return `
+              <tr class="${isDuplicate ? "duplicate-row" : ""}">
+                <td>
+                  <div class="name-cell">
+                    <span>${escapeHtml(lead.firstName || "")} ${escapeHtml(lead.lastName || "")}</span>
+                    ${duplicateBadge}
+                  </div>
+                </td>
+                <td>${escapeHtml(lead.email || "—")}</td>
+                <td class="hide-mobile">${escapeHtml(lead.phone || "—")}</td>
+                <td class="hide-mobile">${escapeHtml(lead.company || "—")}</td>
+                <td class="hide-mobile">${escapeHtml(products || "—")}</td>
+                <td class="hide-mobile">${escapeHtml(lead.capturedBy || "—")}</td>
+                <td>${escapeHtml(formatDateTime(lead.capturedAt))}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        leadsTableWrap.innerHTML = `
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th class="hide-mobile">Phone</th>
+                <th class="hide-mobile">Company</th>
+                <th class="hide-mobile">Products</th>
+                <th class="hide-mobile">Captured by</th>
+                <th>Captured</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+
+        renderPaginationControls(pagination);
+      }
+
+      function exportFilteredJson() {
+        if (!eventData) {
+          return;
+        }
+
+        const filters = getLeadFiltersFromForm(leadFilters);
+        const filteredLeads = filterLeads(eventData.leads || [], filters);
+        const exportPayload = {
+          ...eventData,
+          leads: filteredLeads,
+          exportedWithFilters: filters,
+        };
+        const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${eventData.id}-leads.json`;
+        link.click();
+        URL.revokeObjectURL(url);
       }
     </script>
   </body>

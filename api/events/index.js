@@ -12,7 +12,8 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === "GET") {
-      const events = await listEvents();
+      const includeArchived = req.query.includeArchived === "true";
+      const events = await listEvents({ includeArchived });
       return res.status(200).json({ events });
     }
 

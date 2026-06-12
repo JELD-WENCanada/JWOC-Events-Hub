@@ -1,5 +1,6 @@
 const crypto = require("crypto");
-const { readJson, writeJson } = require("./github");
+const { findDuplicateMatch } = require("./leads");
+const { readJson, withWriteRetry, writeJson } = require("./github");
 
 const INDEX_PATH = "data/events-index.json";
 
@@ -27,9 +28,52 @@ async function saveEventsIndex(index, sha) {
   await writeJson(INDEX_PATH, index, sha);
 }
 
-async function listEvents() {
+function startOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function isEventArchived(event) {
+  return Boolean(event?.archived);
+}
+
+function getEventTimeframe(event) {
+  if (isEventArchived(event)) {
+    return "archived";
+  }
+
+  const eventDate = parseEventDate(event?.date);
+  if (!eventDate) {
+    return "past";
+  }
+
+  return eventDate >= startOfToday() ? "upcoming" : "past";
+}
+
+function parseEventDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, year, month, day] = match.map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function listEvents({ includeArchived = false } = {}) {
   const { data } = await getEventsIndex();
-  return data.events || [];
+  const events = data.events || [];
+
+  if (includeArchived) {
+    return events;
+  }
+
+  return events.filter((event) => !isEventArchived(event));
 }
 
 async function getEvent(eventId) {
@@ -38,6 +82,44 @@ async function getEvent(eventId) {
     return null;
   }
   return result.data;
+}
+
+function buildLead(leadInput) {
+  const lead = {
+    id: crypto.randomUUID(),
+    firstName: (leadInput.firstName || "").trim(),
+    lastName: (leadInput.lastName || "").trim(),
+    email: (leadInput.email || "").trim(),
+    phone: (leadInput.phone || "").trim(),
+    company: (leadInput.company || "").trim(),
+    notes: (leadInput.notes || "").trim(),
+    productsOfInterest: Array.isArray(leadInput.productsOfInterest)
+      ? leadInput.productsOfInterest
+      : [],
+    capturedBy: (leadInput.capturedBy || "").trim(),
+    capturedAt: new Date().toISOString(),
+  };
+
+  if (!lead.firstName || !lead.lastName) {
+    throw new Error("First name and last name are required");
+  }
+
+  return lead;
+}
+
+async function updateLeadCount(eventId, leadCount) {
+  await withWriteRetry(async () => {
+    const indexResult = await getEventsIndex();
+    const index = indexResult.data;
+    const summary = (index.events || []).find((item) => item.id === eventId);
+
+    if (!summary) {
+      return;
+    }
+
+    summary.leadCount = leadCount;
+    await saveEventsIndex(index, indexResult.sha);
+  });
 }
 
 async function createEvent({ name, date, id }) {
@@ -82,49 +164,143 @@ async function createEvent({ name, date, id }) {
 }
 
 async function addLead(eventId, leadInput) {
-  const result = await readJson(eventFilePath(eventId));
-  if (!result) {
-    throw new Error("Event not found");
-  }
+  const lead = buildLead(leadInput);
+  let duplicate = false;
 
-  const event = result.data;
-  const lead = {
-    id: crypto.randomUUID(),
-    firstName: (leadInput.firstName || "").trim(),
-    lastName: (leadInput.lastName || "").trim(),
-    email: (leadInput.email || "").trim(),
-    phone: (leadInput.phone || "").trim(),
-    company: (leadInput.company || "").trim(),
-    notes: (leadInput.notes || "").trim(),
-    productsOfInterest: Array.isArray(leadInput.productsOfInterest)
-      ? leadInput.productsOfInterest
-      : [],
-    capturedBy: (leadInput.capturedBy || "").trim(),
-    capturedAt: new Date().toISOString(),
+  await withWriteRetry(async () => {
+    const result = await readJson(eventFilePath(eventId));
+    if (!result) {
+      throw new Error("Event not found");
+    }
+
+    const event = result.data;
+    event.leads = event.leads || [];
+    duplicate = Boolean(
+      findDuplicateMatch(event.leads, lead.firstName, lead.lastName),
+    );
+
+    if (duplicate) {
+      lead.isDuplicate = true;
+    }
+
+    event.leads.push(lead);
+    await writeJson(eventFilePath(eventId), event, result.sha);
+  });
+
+  const savedEvent = await getEvent(eventId);
+  await updateLeadCount(eventId, savedEvent?.leads?.length || 0);
+
+  return {
+    ...lead,
+    duplicate,
+    duplicateMessage: duplicate
+      ? "A contact with this name already exists for this event."
+      : undefined,
   };
+}
 
-  if (!lead.firstName || !lead.lastName) {
-    throw new Error("First name and last name are required");
+async function updateEvent(eventId, updates = {}) {
+  const patch = {};
+
+  if (updates.name !== undefined) {
+    const name = String(updates.name || "").trim();
+    if (!name) {
+      throw new Error("Event name is required");
+    }
+    patch.name = name;
   }
 
-  event.leads = event.leads || [];
-  event.leads.push(lead);
-  await writeJson(eventFilePath(eventId), event, result.sha);
+  if (updates.date !== undefined) {
+    const date = String(updates.date || "").trim();
+    if (!date) {
+      throw new Error("Event date is required");
+    }
+    patch.date = date;
+  }
 
-  const indexResult = await getEventsIndex();
-  const index = indexResult.data;
-  const summary = (index.events || []).find((item) => item.id === eventId);
-  if (summary) {
-    summary.leadCount = event.leads.length;
+  if (updates.archived !== undefined) {
+    patch.archived = Boolean(updates.archived);
+  }
+
+  if (!Object.keys(patch).length) {
+    throw new Error("No valid fields to update");
+  }
+
+  await withWriteRetry(async () => {
+    const result = await readJson(eventFilePath(eventId));
+    if (!result) {
+      throw new Error("Event not found");
+    }
+
+    const event = result.data;
+    Object.assign(event, patch);
+    await writeJson(eventFilePath(eventId), event, result.sha);
+
+    const indexResult = await getEventsIndex();
+    const index = indexResult.data;
+    const summary = (index.events || []).find((item) => item.id === eventId);
+
+    if (!summary) {
+      return;
+    }
+
+    if (patch.name !== undefined) {
+      summary.name = patch.name;
+    }
+    if (patch.date !== undefined) {
+      summary.date = patch.date;
+    }
+    if (patch.archived !== undefined) {
+      summary.archived = patch.archived;
+    } else if (summary.archived === undefined) {
+      summary.archived = false;
+    }
+
     await saveEventsIndex(index, indexResult.sha);
+  });
+
+  return getEvent(eventId);
+}
+
+function buildRepLeaderboard(leads) {
+  const counts = new Map();
+
+  for (const lead of leads || []) {
+    const rep = String(lead.capturedBy || "").trim() || "Unknown";
+    counts.set(rep, (counts.get(rep) || 0) + 1);
   }
 
-  return lead;
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+async function getGlobalRepLeaderboard({ includeArchived = false } = {}) {
+  const events = await listEvents({ includeArchived: true });
+  const allLeads = [];
+
+  for (const summary of events) {
+    if (!includeArchived && isEventArchived(summary)) {
+      continue;
+    }
+
+    const event = await getEvent(summary.id);
+    if (event?.leads?.length) {
+      allLeads.push(...event.leads);
+    }
+  }
+
+  return buildRepLeaderboard(allLeads);
 }
 
 module.exports = {
+  buildRepLeaderboard,
+  getEventTimeframe,
+  getGlobalRepLeaderboard,
+  isEventArchived,
   listEvents,
   getEvent,
   createEvent,
+  updateEvent,
   addLead,
 };
