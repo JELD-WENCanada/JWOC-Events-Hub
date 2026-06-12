@@ -17,6 +17,21 @@
       ],
       "capturedBy": "User",
       "capturedAt": "2026-06-12T18:26:53.895Z"
+    },
+    {
+      "id": "4a55f761-4f0f-49e6-b9e4-174d527af63f",
+      "firstName": "Abrar",
+      "lastName": "Chowdhry",
+      "email": "Hide My Email",
+      "phone": "647-328-0756",
+      "company": "Google",
+      "notes": "Mozilla",
+      "productsOfInterest": [
+        "Firefox"
+      ],
+      "capturedBy": "User",
+      "capturedAt": "2026-06-12T18:29:17.688Z",
+      "isDuplicate": true
     }
   ]
 }
