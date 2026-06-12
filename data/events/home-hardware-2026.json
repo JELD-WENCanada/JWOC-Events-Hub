@@ -3,20 +3,5 @@
   "name": "Home Hardware - 2026",
   "date": "2026-09-16",
   "createdAt": "2026-06-11T00:00:00.000Z",
-  "leads": [
-    {
-      "id": "0dcc0246-c598-452c-abc5-b479dd4db1c7",
-      "firstName": "Abrar",
-      "lastName": "Chowdhry",
-      "email": "achowdhry@jeldwen.com",
-      "phone": "647-328-0756",
-      "company": "Google",
-      "notes": "Test",
-      "productsOfInterest": [
-        "Stuff"
-      ],
-      "capturedBy": "Abrar Chowdhry",
-      "capturedAt": "2026-06-12T18:53:29.859Z"
-    }
-  ]
+  "leads": []
 }
