@@ -32,6 +32,18 @@
       "capturedBy": "User",
       "capturedAt": "2026-06-12T18:29:17.688Z",
       "isDuplicate": true
+    },
+    {
+      "id": "e2b473fd-4911-4c1a-94c9-50a9b9e5f7a8",
+      "firstName": "Susan",
+      "lastName": "Albizre",
+      "email": "googleman",
+      "phone": "647-328-0756",
+      "company": "Ottawa",
+      "notes": "Notessss",
+      "productsOfInterest": [],
+      "capturedBy": "User",
+      "capturedAt": "2026-06-12T18:29:19.754Z"
     }
   ]
 }
