@@ -182,6 +182,7 @@ module.exports = {
   checkAdminEmail,
   checkAdminSession,
   createSessionToken,
+  getAllowedEmails,
   getSessionConfigError,
   getSessionEmail,
   normalizeEmail,

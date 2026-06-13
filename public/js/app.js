@@ -71,6 +71,79 @@ async function logoutAdmin() {
   return { authenticated: false };
 }
 
+function profileDisplayName(profile, email) {
+  const firstName = String(profile?.firstName || "").trim();
+  const lastName = String(profile?.lastName || "").trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  const localPart = String(email || "").split("@")[0] || "";
+  return localPart || email || "";
+}
+
+function profileInitials(profile, email) {
+  const firstName = String(profile?.firstName || "").trim();
+  const lastName = String(profile?.lastName || "").trim();
+
+  if (firstName && lastName) {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  }
+
+  if (firstName) {
+    return firstName.charAt(0).toUpperCase();
+  }
+
+  const localPart = String(email || "").split("@")[0] || "";
+  return (localPart.charAt(0) || "?").toUpperCase();
+}
+
+function profileHasName(profile) {
+  return Boolean(
+    String(profile?.firstName || "").trim() ||
+    String(profile?.lastName || "").trim(),
+  );
+}
+
+async function fetchAdminProfile() {
+  return apiRequest("/api/admin/profile");
+}
+
+async function updateAdminProfile(updates) {
+  return apiRequest("/api/admin/profile", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates),
+  });
+}
+
+function applyUserPillState(elements, email, profile = null) {
+  const { pill, avatar, displayName, email: emailElement } = elements;
+  if (!pill || !avatar || !emailElement) {
+    return;
+  }
+
+  const hasEmail = Boolean(email);
+  pill.hidden = !hasEmail;
+  if (!hasEmail) {
+    return;
+  }
+
+  avatar.textContent = profileInitials(profile, email);
+  emailElement.textContent = email;
+
+  if (displayName) {
+    const hasName = profileHasName(profile);
+    displayName.textContent = hasName ? profileDisplayName(profile, email) : "";
+    displayName.hidden = !hasName;
+    pill.classList.toggle("user-pill-has-name", hasName);
+  }
+}
+
 function parseEventDate(value) {
   if (!value) {
     return null;
@@ -299,6 +372,31 @@ function filterEventsByTab(events, tab) {
   return (events || []).filter((event) => getEventTimeframe(event) === tab);
 }
 
+function filterEventsBySearch(events, query) {
+  const normalizedQuery = String(query || "")
+    .trim()
+    .toLowerCase();
+  if (!normalizedQuery) {
+    return events || [];
+  }
+
+  return (events || []).filter((event) => {
+    const name = String(event.name || "").toLowerCase();
+    const year = eventYear(event.date).toLowerCase();
+    const date = String(event.date || "").toLowerCase();
+    const leadCount = String(event.leadCount || 0);
+    const id = String(event.id || "").toLowerCase();
+
+    return (
+      name.includes(normalizedQuery) ||
+      year.includes(normalizedQuery) ||
+      date.includes(normalizedQuery) ||
+      id.includes(normalizedQuery) ||
+      leadCount.includes(normalizedQuery)
+    );
+  });
+}
+
 function buildRepLeaderboard(leads) {
   const counts = new Map();
 
@@ -342,6 +440,19 @@ async function deleteLead(eventId, leadId) {
     `/api/events/${encodeURIComponent(eventId)}/leads/${encodeURIComponent(leadId)}`,
     {
       method: "DELETE",
+    },
+  );
+}
+
+async function updateLead(eventId, leadId, updates) {
+  return apiRequest(
+    `/api/events/${encodeURIComponent(eventId)}/leads/${encodeURIComponent(leadId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
     },
   );
 }

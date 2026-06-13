@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=12" />
+    <link rel="stylesheet" href="/css/style.css?v=14" />
   </head>
   <body>
     <header class="app-header">
@@ -20,6 +20,22 @@
           <h1 class="nav-title">Events Hub</h1>
         </a>
         <div class="app-header-actions">
+          <a
+            href="/profile.html"
+            id="userPill"
+            class="user-pill user-pill-link"
+            hidden
+          >
+            <span id="userAvatar" class="user-avatar"></span>
+            <span class="user-pill-text">
+              <span
+                id="userDisplayName"
+                class="user-display-name"
+                hidden
+              ></span>
+              <span id="userEmail" class="user-email"></span>
+            </span>
+          </a>
           <a href="/" class="btn btn-ghost">All events</a>
         </div>
       </div>
@@ -161,7 +177,78 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=12"></script>
+    <dialog id="editLeadDialog" class="modal">
+      <form id="editLeadForm" method="dialog" class="modal-card">
+        <h2 class="modal-title">Edit contact</h2>
+        <div class="field-grid">
+          <div class="field">
+            <label class="field-label" for="editLeadFirstName"
+              >First name</label
+            >
+            <input
+              id="editLeadFirstName"
+              name="firstName"
+              type="text"
+              required
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="editLeadLastName">Last name</label>
+            <input id="editLeadLastName" name="lastName" type="text" required />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadEmail">Email</label>
+          <input
+            id="editLeadEmail"
+            name="email"
+            type="email"
+            autocomplete="email"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadPhone">Phone</label>
+          <input
+            id="editLeadPhone"
+            name="phone"
+            type="tel"
+            autocomplete="tel"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadCompany">Company</label>
+          <input id="editLeadCompany" name="company" type="text" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadCapturedBy"
+            >Captured by</label
+          >
+          <input id="editLeadCapturedBy" name="capturedBy" type="text" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadProducts"
+            >Products of interest
+            <span class="hint">comma-separated</span></label
+          >
+          <input id="editLeadProducts" name="productsOfInterest" type="text" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="editLeadNotes">Notes</label>
+          <textarea id="editLeadNotes" name="notes" rows="3"></textarea>
+        </div>
+        <div id="editLeadMessage" class="message" hidden></div>
+        <div class="modal-actions">
+          <button type="button" id="editLeadCancel" class="btn btn-ghost">
+            Cancel
+          </button>
+          <button type="submit" id="editLeadSave" class="btn btn-primary">
+            Save changes
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/js/app.js?v=14"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
@@ -187,10 +274,14 @@
       const editEventDialog = document.getElementById("editEventDialog");
       const editEventForm = document.getElementById("editEventForm");
       const editEventCancel = document.getElementById("editEventCancel");
+      const editLeadDialog = document.getElementById("editLeadDialog");
+      const editLeadForm = document.getElementById("editLeadForm");
+      const editLeadCancel = document.getElementById("editLeadCancel");
 
       let eventData = null;
       let isAdmin = false;
       let leadsPage = 1;
+      let editingLeadId = null;
 
       if (!eventId) {
         showMessage("pageMessage", "Missing event ID in URL.", "error");
@@ -209,18 +300,53 @@
         deleteEventButton.addEventListener("click", confirmDeleteEvent);
         editEventCancel.addEventListener("click", closeEditDialog);
         editEventForm.addEventListener("submit", saveEventEdits);
+        editLeadCancel.addEventListener("click", closeEditLeadDialog);
+        editLeadForm.addEventListener("submit", saveLeadEdits);
         initPage();
       }
 
       async function initPage() {
+        const userPillElements = {
+          pill: document.getElementById("userPill"),
+          avatar: document.getElementById("userAvatar"),
+          displayName: document.getElementById("userDisplayName"),
+          email: document.getElementById("userEmail"),
+        };
+
         try {
           const session = await getAdminSession();
           isAdmin = session.authenticated;
           editEventButton.hidden = !isAdmin;
           archiveEventButton.hidden = !isAdmin;
           deleteEventButton.hidden = !isAdmin;
+
+          if (isAdmin && session.email) {
+            applyUserPillState(userPillElements, session.email, null);
+            try {
+              const profilePage = await fetchAdminProfile();
+              applyUserPillState(
+                userPillElements,
+                session.email,
+                profilePage.profile || null,
+              );
+            } catch {
+              applyUserPillState(userPillElements, session.email, null);
+            }
+          } else {
+            applyUserPillState(userPillElements, "", null);
+          }
         } catch {
           isAdmin = false;
+          applyUserPillState(
+            {
+              pill: document.getElementById("userPill"),
+              avatar: document.getElementById("userAvatar"),
+              displayName: document.getElementById("userDisplayName"),
+              email: document.getElementById("userEmail"),
+            },
+            "",
+            null,
+          );
         }
 
         await loadEvent();
@@ -298,6 +424,65 @@
 
       function closeEditDialog() {
         editEventDialog.close();
+      }
+
+      function openEditLeadDialog(lead) {
+        editingLeadId = lead.id;
+        document.getElementById("editLeadFirstName").value =
+          lead.firstName || "";
+        document.getElementById("editLeadLastName").value = lead.lastName || "";
+        document.getElementById("editLeadEmail").value = lead.email || "";
+        document.getElementById("editLeadPhone").value = lead.phone || "";
+        document.getElementById("editLeadCompany").value = lead.company || "";
+        document.getElementById("editLeadCapturedBy").value =
+          lead.capturedBy || "";
+        document.getElementById("editLeadProducts").value = Array.isArray(
+          lead.productsOfInterest,
+        )
+          ? lead.productsOfInterest.join(", ")
+          : "";
+        document.getElementById("editLeadNotes").value = lead.notes || "";
+        showMessage("editLeadMessage", "", "success");
+        editLeadDialog.showModal();
+      }
+
+      function closeEditLeadDialog() {
+        editingLeadId = null;
+        editLeadDialog.close();
+      }
+
+      async function saveLeadEdits(submitEvent) {
+        submitEvent.preventDefault();
+        if (!editingLeadId) {
+          return;
+        }
+
+        const button = document.getElementById("editLeadSave");
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Saving…";
+
+        try {
+          eventData = await updateLead(eventId, editingLeadId, {
+            firstName: document.getElementById("editLeadFirstName").value,
+            lastName: document.getElementById("editLeadLastName").value,
+            email: document.getElementById("editLeadEmail").value,
+            phone: document.getElementById("editLeadPhone").value,
+            company: document.getElementById("editLeadCompany").value,
+            capturedBy: document.getElementById("editLeadCapturedBy").value,
+            productsOfInterest:
+              document.getElementById("editLeadProducts").value,
+            notes: document.getElementById("editLeadNotes").value,
+          });
+          closeEditLeadDialog();
+          renderLeaderboard();
+          renderLeads();
+        } catch (error) {
+          showMessage("editLeadMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
       }
 
       async function saveEventEdits(submitEvent) {
@@ -445,13 +630,22 @@
               : "";
             const deleteCell = isAdmin
               ? `<td class="actions-cell">
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-small btn-danger-ghost"
-                    data-delete-lead="${escapeHtml(lead.id)}"
-                  >
-                    Delete
-                  </button>
+                  <div class="btn-group">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-small"
+                      data-edit-lead="${escapeHtml(lead.id)}"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-small btn-danger-ghost"
+                      data-delete-lead="${escapeHtml(lead.id)}"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>`
               : "";
 
@@ -496,6 +690,18 @@
         `;
 
         if (isAdmin) {
+          leadsTableWrap
+            .querySelectorAll("[data-edit-lead]")
+            .forEach((button) => {
+              button.addEventListener("click", () => {
+                const leadId = button.getAttribute("data-edit-lead");
+                const lead = allLeads.find((item) => item.id === leadId);
+                if (lead) {
+                  openEditLeadDialog(lead);
+                }
+              });
+            });
+
           leadsTableWrap
             .querySelectorAll("[data-delete-lead]")
             .forEach((button) => {

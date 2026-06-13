@@ -199,6 +199,79 @@ async function addLead(eventId, leadInput) {
   };
 }
 
+function applyLeadUpdates(lead, updates) {
+  if (updates.firstName !== undefined) {
+    lead.firstName = String(updates.firstName || "").trim();
+  }
+
+  if (updates.lastName !== undefined) {
+    lead.lastName = String(updates.lastName || "").trim();
+  }
+
+  if (updates.email !== undefined) {
+    lead.email = String(updates.email || "").trim();
+  }
+
+  if (updates.phone !== undefined) {
+    lead.phone = String(updates.phone || "").trim();
+  }
+
+  if (updates.company !== undefined) {
+    lead.company = String(updates.company || "").trim();
+  }
+
+  if (updates.notes !== undefined) {
+    lead.notes = String(updates.notes || "").trim();
+  }
+
+  if (updates.capturedBy !== undefined) {
+    lead.capturedBy = String(updates.capturedBy || "").trim();
+  }
+
+  if (updates.productsOfInterest !== undefined) {
+    lead.productsOfInterest = Array.isArray(updates.productsOfInterest)
+      ? updates.productsOfInterest
+          .map((item) => String(item || "").trim())
+          .filter(Boolean)
+      : String(updates.productsOfInterest || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+  }
+
+  if (!lead.firstName || !lead.lastName) {
+    throw new Error("First name and last name are required");
+  }
+}
+
+async function updateLead(eventId, leadId, updates) {
+  const normalizedLeadId = String(leadId || "").trim();
+  if (!normalizedLeadId) {
+    throw new Error("Lead ID is required");
+  }
+
+  await withWriteRetry(async () => {
+    const result = await readJson(eventFilePath(eventId));
+    if (!result) {
+      throw new Error("Event not found");
+    }
+
+    const event = result.data;
+    const leads = event.leads || [];
+    const lead = leads.find((item) => item.id === normalizedLeadId);
+
+    if (!lead) {
+      throw new Error("Lead not found");
+    }
+
+    applyLeadUpdates(lead, updates);
+    refreshDuplicateFlags(event.leads);
+    await writeJson(eventFilePath(eventId), event, result.sha);
+  });
+
+  return getEvent(eventId);
+}
+
 async function deleteLead(eventId, leadId) {
   const normalizedLeadId = String(leadId || "").trim();
   if (!normalizedLeadId) {
@@ -369,5 +442,6 @@ module.exports = {
   deleteEvent,
   updateEvent,
   addLead,
+  updateLead,
   deleteLead,
 };

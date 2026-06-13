@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=12" />
+    <link rel="stylesheet" href="/css/style.css?v=14" />
   </head>
   <body class="session-pending">
     <div id="appLoading" class="app-loading" aria-live="polite">
@@ -72,10 +72,21 @@
             <h1 class="nav-title">Events Hub</h1>
           </div>
           <div class="app-header-actions">
-            <div id="userPill" class="user-pill" hidden>
+            <a
+              href="/profile.html"
+              id="userPill"
+              class="user-pill user-pill-link"
+            >
               <span id="userAvatar" class="user-avatar"></span>
-              <span id="userEmail" class="user-email"></span>
-            </div>
+              <span class="user-pill-text">
+                <span
+                  id="userDisplayName"
+                  class="user-display-name"
+                  hidden
+                ></span>
+                <span id="userEmail" class="user-email"></span>
+              </span>
+            </a>
             <button type="button" id="signOutButton" class="btn btn-ghost">
               Sign out
             </button>
@@ -123,6 +134,16 @@
             <div class="panel-header">
               <h2 class="panel-title">Events</h2>
               <div class="toolbar">
+                <label class="toolbar-control toolbar-search-control">
+                  <span class="visually-hidden">Search events</span>
+                  <input
+                    id="eventSearch"
+                    class="toolbar-search"
+                    type="search"
+                    placeholder="Search events…"
+                    autocomplete="off"
+                  />
+                </label>
                 <label class="toolbar-control">
                   <span class="toolbar-label">Sort</span>
                   <select id="eventSort" class="toolbar-select">
@@ -168,6 +189,9 @@
               <div id="eventsGrid" class="event-grid"></div>
               <div id="eventsEmpty" class="empty-state" hidden>
                 No events in this group.
+              </div>
+              <div id="eventsSearchEmpty" class="empty-state" hidden>
+                No events match your search.
               </div>
             </div>
           </section>
@@ -240,26 +264,32 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=12"></script>
+    <script src="/js/app.js?v=14"></script>
     <script>
       const loginScreen = document.getElementById("loginScreen");
       const dashboard = document.getElementById("dashboard");
       const loginForm = document.getElementById("loginForm");
       const signOutButton = document.getElementById("signOutButton");
       const userPill = document.getElementById("userPill");
-      const userAvatar = document.getElementById("userAvatar");
-      const userEmail = document.getElementById("userEmail");
+      const userPillElements = {
+        pill: userPill,
+        avatar: document.getElementById("userAvatar"),
+        displayName: document.getElementById("userDisplayName"),
+        email: document.getElementById("userEmail"),
+      };
       const newEventButton = document.getElementById("newEventButton");
       const createEventDialog = document.getElementById("createEventDialog");
       const createEventForm = document.getElementById("createEventForm");
       const createEventCancel = document.getElementById("createEventCancel");
       const eventsGrid = document.getElementById("eventsGrid");
       const eventsEmpty = document.getElementById("eventsEmpty");
+      const eventsSearchEmpty = document.getElementById("eventsSearchEmpty");
       const totalEventsStat = document.getElementById("totalEventsStat");
       const totalLeadsStat = document.getElementById("totalLeadsStat");
       const avgLeadsStat = document.getElementById("avgLeadsStat");
       const globalLeaderboard = document.getElementById("globalLeaderboard");
       const eventSort = document.getElementById("eventSort");
+      const eventSearch = document.getElementById("eventSearch");
       const editEventDialog = document.getElementById("editEventDialog");
       const editEventForm = document.getElementById("editEventForm");
       const editEventCancel = document.getElementById("editEventCancel");
@@ -268,18 +298,35 @@
       let activeTab = "upcoming";
       let editingEventId = null;
 
-      function userInitial(email) {
-        const local = String(email || "").split("@")[0] || "";
-        return (local.charAt(0) || "?").toUpperCase();
+      async function refreshUserPill(email) {
+        applyUserPillState(userPillElements, email, null);
+
+        if (!email) {
+          return;
+        }
+
+        try {
+          const profilePage = await fetchAdminProfile();
+          applyUserPillState(
+            userPillElements,
+            email,
+            profilePage.profile || null,
+          );
+        } catch {
+          applyUserPillState(userPillElements, email, null);
+        }
       }
 
       function setAuthenticated(isAuthenticated, email = "") {
         document.body.classList.toggle("app-authenticated", isAuthenticated);
         loginScreen.hidden = isAuthenticated;
         dashboard.hidden = !isAuthenticated;
-        userPill.hidden = !isAuthenticated || !email;
-        userEmail.textContent = email || "";
-        userAvatar.textContent = userInitial(email);
+
+        if (isAuthenticated && email) {
+          refreshUserPill(email);
+        } else {
+          applyUserPillState(userPillElements, "", null);
+        }
       }
 
       function finishSessionInit() {
@@ -334,6 +381,10 @@
           setAuthenticated(false);
           eventsGrid.innerHTML = "";
           eventsEmpty.hidden = true;
+          eventsSearchEmpty.hidden = true;
+          if (eventSearch) {
+            eventSearch.value = "";
+          }
         }
       });
 
@@ -370,12 +421,17 @@
       }
 
       function renderEvents() {
+        const tabEvents = filterEventsByTab(allEvents, activeTab);
+        const searchQuery = String(eventSearch?.value || "").trim();
         const filtered = sortEvents(
-          filterEventsByTab(allEvents, activeTab),
+          filterEventsBySearch(tabEvents, searchQuery),
           eventSort.value,
         );
 
-        eventsEmpty.hidden = filtered.length > 0;
+        const hasSearch = Boolean(searchQuery);
+        eventsEmpty.hidden = tabEvents.length > 0 || hasSearch;
+        eventsSearchEmpty.hidden = !hasSearch || filtered.length > 0;
+        eventsGrid.hidden = filtered.length === 0;
         eventsGrid.innerHTML = "";
 
         filtered.forEach((event) => {
@@ -529,6 +585,7 @@
       });
 
       eventSort.addEventListener("change", renderEvents);
+      eventSearch?.addEventListener("input", renderEvents);
       newEventButton.addEventListener("click", openCreateDialog);
       createEventCancel.addEventListener("click", closeCreateDialog);
       editEventCancel.addEventListener("click", closeEditDialog);
