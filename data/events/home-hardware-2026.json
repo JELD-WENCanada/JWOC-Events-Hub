@@ -3,5 +3,18 @@
   "name": "Home Hardware - 2026",
   "date": "2026-09-16",
   "createdAt": "2026-06-11T00:00:00.000Z",
-  "leads": []
+  "leads": [
+    {
+      "id": "b604d265-9ba3-4ba2-bcd9-42a00231ae69",
+      "firstName": "First",
+      "lastName": "Last",
+      "email": "email",
+      "phone": "647-328-0756",
+      "company": "JW Business",
+      "notes": "Testing",
+      "productsOfInterest": [],
+      "capturedBy": "Abrar Chowdhry",
+      "capturedAt": "2026-06-14T15:16:31.535Z"
+    }
+  ]
 }
