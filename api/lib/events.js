@@ -166,6 +166,7 @@ async function createEvent({ name, date, id }) {
 async function addLead(eventId, leadInput) {
   const lead = buildLead(leadInput);
   let duplicate = false;
+  let leadCount = 0;
 
   await withWriteRetry(async () => {
     const result = await readJson(eventFilePath(eventId));
@@ -184,11 +185,11 @@ async function addLead(eventId, leadInput) {
     }
 
     event.leads.push(lead);
+    leadCount = event.leads.length;
     await writeJson(eventFilePath(eventId), event, result.sha);
   });
 
-  const savedEvent = await getEvent(eventId);
-  await updateLeadCount(eventId, savedEvent?.leads?.length || 0);
+  await updateLeadCount(eventId, leadCount);
 
   return {
     ...lead,
@@ -278,6 +279,8 @@ async function deleteLead(eventId, leadId) {
     throw new Error("Lead ID is required");
   }
 
+  let leadCount = 0;
+
   await withWriteRetry(async () => {
     const result = await readJson(eventFilePath(eventId));
     if (!result) {
@@ -293,14 +296,14 @@ async function deleteLead(eventId, leadId) {
     }
 
     event.leads = nextLeads;
+    leadCount = event.leads.length;
     refreshDuplicateFlags(event.leads);
     await writeJson(eventFilePath(eventId), event, result.sha);
   });
 
-  const savedEvent = await getEvent(eventId);
-  await updateLeadCount(eventId, savedEvent?.leads?.length || 0);
+  await updateLeadCount(eventId, leadCount);
 
-  return savedEvent;
+  return getEvent(eventId);
 }
 
 async function deleteEvent(eventId) {
