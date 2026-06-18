@@ -31,18 +31,6 @@
       "capturedAt": "2026-06-17T19:34:57.185Z"
     },
     {
-      "id": "e8a1cd23-57a4-4358-a3ad-278898b85846",
-      "firstName": "Mark",
-      "lastName": "Krol",
-      "email": "mark@fakro.ca",
-      "phone": "519-352-6587",
-      "company": "Fakro",
-      "notes": "",
-      "productsOfInterest": [],
-      "capturedBy": "Test User",
-      "capturedAt": "2026-06-18T13:01:15.978Z"
-    },
-    {
       "id": "73e99b51-5f87-4ae1-ba38-00b5e329d783",
       "firstName": "Seweryn",
       "lastName": "Zalewski",
@@ -52,7 +40,8 @@
       "notes": "",
       "productsOfInterest": [],
       "capturedBy": "Test User",
-      "capturedAt": "2026-06-18T13:13:36.213Z"
+      "capturedAt": "2026-06-18T13:13:36.213Z",
+      "isDuplicate": true
     },
     {
       "id": "4678d0bc-3fd6-4d25-b07f-faa537cc204a",
@@ -64,8 +53,7 @@
       "notes": "",
       "productsOfInterest": [],
       "capturedBy": "Test User",
-      "capturedAt": "2026-06-18T13:15:08.145Z",
-      "isDuplicate": true
+      "capturedAt": "2026-06-18T13:15:08.145Z"
     },
     {
       "id": "0680f250-6b98-4799-ac98-76022328a84b",
