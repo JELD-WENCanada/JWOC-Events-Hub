@@ -273,10 +273,15 @@ async function updateLead(eventId, leadId, updates) {
   return getEvent(eventId);
 }
 
-async function deleteLead(eventId, leadId) {
-  const normalizedLeadId = String(leadId || "").trim();
-  if (!normalizedLeadId) {
-    throw new Error("Lead ID is required");
+async function deleteLeads(eventId, leadIds) {
+  const normalizedIds = new Set(
+    (Array.isArray(leadIds) ? leadIds : [])
+      .map((id) => String(id || "").trim())
+      .filter(Boolean),
+  );
+
+  if (normalizedIds.size === 0) {
+    throw new Error("At least one lead ID is required");
   }
 
   let leadCount = 0;
@@ -289,7 +294,7 @@ async function deleteLead(eventId, leadId) {
 
     const event = result.data;
     const leads = event.leads || [];
-    const nextLeads = leads.filter((lead) => lead.id !== normalizedLeadId);
+    const nextLeads = leads.filter((lead) => !normalizedIds.has(lead.id));
 
     if (nextLeads.length === leads.length) {
       throw new Error("Lead not found");
@@ -304,6 +309,10 @@ async function deleteLead(eventId, leadId) {
   await updateLeadCount(eventId, leadCount);
 
   return getEvent(eventId);
+}
+
+async function deleteLead(eventId, leadId) {
+  return deleteLeads(eventId, [leadId]);
 }
 
 async function deleteEvent(eventId) {
@@ -447,4 +456,5 @@ module.exports = {
   addLead,
   updateLead,
   deleteLead,
+  deleteLeads,
 };

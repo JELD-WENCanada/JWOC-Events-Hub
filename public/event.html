@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Event Leads — JWOC Events Hub</title>
-    <link rel="stylesheet" href="/css/style.css?v=14" />
+    <link rel="stylesheet" href="/css/style.css?v=15" />
   </head>
   <body>
     <header class="app-header">
@@ -141,6 +141,20 @@
             <p id="filterSummary" class="filter-summary"></p>
           </form>
 
+          <div id="leadsBulkActions" class="bulk-actions" hidden>
+            <span id="leadsSelectionSummary" class="bulk-actions-summary"
+              >0 selected</span
+            >
+            <button
+              type="button"
+              id="deleteSelectedLeadsButton"
+              class="btn btn-ghost btn-small btn-danger-ghost"
+              disabled
+            >
+              Delete selected
+            </button>
+          </div>
+
           <div id="leadsTableWrap" class="table-wrap"></div>
           <div id="leadsPagination" class="pagination" hidden></div>
           <div id="leadsEmpty" class="empty-state" hidden>
@@ -248,7 +262,7 @@
       </form>
     </dialog>
 
-    <script src="/js/app.js?v=14"></script>
+    <script src="/js/app.js?v=15"></script>
     <script>
       const params = new URLSearchParams(window.location.search);
       const eventId = params.get("id");
@@ -277,11 +291,19 @@
       const editLeadDialog = document.getElementById("editLeadDialog");
       const editLeadForm = document.getElementById("editLeadForm");
       const editLeadCancel = document.getElementById("editLeadCancel");
+      const leadsBulkActions = document.getElementById("leadsBulkActions");
+      const leadsSelectionSummary = document.getElementById(
+        "leadsSelectionSummary",
+      );
+      const deleteSelectedLeadsButton = document.getElementById(
+        "deleteSelectedLeadsButton",
+      );
 
       let eventData = null;
       let isAdmin = false;
       let leadsPage = 1;
       let editingLeadId = null;
+      const selectedLeadIds = new Set();
 
       if (!eventId) {
         showMessage("pageMessage", "Missing event ID in URL.", "error");
@@ -302,6 +324,10 @@
         editEventForm.addEventListener("submit", saveEventEdits);
         editLeadCancel.addEventListener("click", closeEditLeadDialog);
         editLeadForm.addEventListener("submit", saveLeadEdits);
+        deleteSelectedLeadsButton.addEventListener(
+          "click",
+          confirmDeleteSelectedLeads,
+        );
         initPage();
       }
 
@@ -596,6 +622,7 @@
           filterSummary.textContent = "";
           leadsTableWrap.innerHTML = "";
           leadsPagination.hidden = true;
+          updateBulkActions();
           return;
         }
 
@@ -616,8 +643,19 @@
         if (!filteredLeads.length) {
           leadsTableWrap.innerHTML = "";
           leadsPagination.hidden = true;
+          updateBulkActions();
           return;
         }
+
+        const selectHeader = isAdmin
+          ? `<th class="select-cell">
+              <input
+                type="checkbox"
+                id="selectAllLeads"
+                aria-label="Select all on this page"
+              />
+            </th>`
+          : "";
 
         const rows = pageLeads
           .map((lead) => {
@@ -627,6 +665,17 @@
             const isDuplicate = duplicateIds.has(lead.id);
             const duplicateBadge = isDuplicate
               ? '<span class="duplicate-badge">Duplicate</span>'
+              : "";
+            const selectCell = isAdmin
+              ? `<td class="select-cell">
+                  <input
+                    type="checkbox"
+                    class="lead-select-checkbox"
+                    data-lead-checkbox="${escapeHtml(lead.id)}"
+                    aria-label="Select ${escapeHtml(lead.firstName || "")} ${escapeHtml(lead.lastName || "")}"
+                    ${selectedLeadIds.has(lead.id) ? "checked" : ""}
+                  />
+                </td>`
               : "";
             const deleteCell = isAdmin
               ? `<td class="actions-cell">
@@ -651,6 +700,7 @@
 
             return `
               <tr class="${isDuplicate ? "duplicate-row" : ""}">
+                ${selectCell}
                 <td>
                   <div class="name-cell">
                     <span>${escapeHtml(lead.firstName || "")} ${escapeHtml(lead.lastName || "")}</span>
@@ -675,6 +725,7 @@
           <table class="data-table">
             <thead>
               <tr>
+                ${selectHeader}
                 <th>Name</th>
                 <th>Email</th>
                 <th class="hide-mobile">Phone</th>
@@ -690,6 +741,41 @@
         `;
 
         if (isAdmin) {
+          const selectAll = document.getElementById("selectAllLeads");
+          if (selectAll) {
+            selectAll.addEventListener("change", () => {
+              pageLeads.forEach((lead) => {
+                if (selectAll.checked) {
+                  selectedLeadIds.add(lead.id);
+                } else {
+                  selectedLeadIds.delete(lead.id);
+                }
+              });
+              leadsTableWrap
+                .querySelectorAll("[data-lead-checkbox]")
+                .forEach((checkbox) => {
+                  checkbox.checked = selectAll.checked;
+                });
+              updateBulkActions();
+            });
+            updateSelectAllCheckbox();
+          }
+
+          leadsTableWrap
+            .querySelectorAll("[data-lead-checkbox]")
+            .forEach((checkbox) => {
+              checkbox.addEventListener("change", () => {
+                const leadId = checkbox.getAttribute("data-lead-checkbox");
+                if (checkbox.checked) {
+                  selectedLeadIds.add(leadId);
+                } else {
+                  selectedLeadIds.delete(leadId);
+                }
+                updateBulkActions();
+                updateSelectAllCheckbox();
+              });
+            });
+
           leadsTableWrap
             .querySelectorAll("[data-edit-lead]")
             .forEach((button) => {
@@ -716,7 +802,81 @@
             });
         }
 
+        updateBulkActions();
         renderPaginationControls(pagination);
+      }
+
+      function updateBulkActions() {
+        if (!isAdmin || !eventData || !(eventData.leads || []).length) {
+          leadsBulkActions.hidden = true;
+          return;
+        }
+
+        leadsBulkActions.hidden = false;
+        const count = selectedLeadIds.size;
+        leadsSelectionSummary.textContent =
+          count === 1 ? "1 selected" : `${count} selected`;
+        deleteSelectedLeadsButton.disabled = count === 0;
+      }
+
+      function updateSelectAllCheckbox() {
+        const selectAll = document.getElementById("selectAllLeads");
+        if (!selectAll) {
+          return;
+        }
+
+        const checkboxes = leadsTableWrap.querySelectorAll(
+          "[data-lead-checkbox]",
+        );
+        const checkedCount = [...checkboxes].filter(
+          (checkbox) => checkbox.checked,
+        ).length;
+        selectAll.checked =
+          checkboxes.length > 0 && checkedCount === checkboxes.length;
+        selectAll.indeterminate =
+          checkedCount > 0 && checkedCount < checkboxes.length;
+      }
+
+      async function confirmDeleteSelectedLeads() {
+        const count = selectedLeadIds.size;
+        if (!count) {
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `Delete ${count} contact${count === 1 ? "" : "s"}? This cannot be undone.`,
+        );
+        if (!confirmed) {
+          return;
+        }
+
+        showMessage("pageMessage", "", "success");
+
+        const defaultLabel = deleteSelectedLeadsButton.textContent;
+        deleteSelectedLeadsButton.disabled = true;
+        deleteSelectedLeadsButton.textContent = "Deleting…";
+
+        try {
+          const leadIds = [...selectedLeadIds];
+          eventData = await deleteLeads(eventId, leadIds);
+          selectedLeadIds.clear();
+          const filters = getLeadFiltersFromForm(leadFilters);
+          const filteredLeads = filterLeads(eventData.leads || [], filters);
+          const pagination = paginate(filteredLeads, leadsPage);
+          if (
+            pagination.page > pagination.totalPages &&
+            pagination.totalPages > 0
+          ) {
+            leadsPage = pagination.totalPages;
+          }
+          renderLeaderboard();
+          renderLeads();
+        } catch (error) {
+          showMessage("pageMessage", error.message, "error");
+          updateBulkActions();
+        } finally {
+          deleteSelectedLeadsButton.textContent = defaultLabel;
+        }
       }
 
       async function confirmDeleteLead(leadId, leadName) {
@@ -731,6 +891,7 @@
 
         try {
           eventData = await deleteLead(eventId, leadId);
+          selectedLeadIds.delete(leadId);
           const filters = getLeadFiltersFromForm(leadFilters);
           const filteredLeads = filterLeads(eventData.leads || [], filters);
           const pagination = paginate(filteredLeads, leadsPage);

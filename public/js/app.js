@@ -444,6 +444,16 @@ async function deleteLead(eventId, leadId) {
   );
 }
 
+async function deleteLeads(eventId, leadIds) {
+  return apiRequest(`/api/events/${encodeURIComponent(eventId)}/leads`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ leadIds }),
+  });
+}
+
 async function updateLead(eventId, leadId, updates) {
   return apiRequest(
     `/api/events/${encodeURIComponent(eventId)}/leads/${encodeURIComponent(leadId)}`,
