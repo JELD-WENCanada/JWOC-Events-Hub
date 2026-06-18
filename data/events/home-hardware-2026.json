@@ -29,6 +29,18 @@
       ],
       "capturedBy": "Abrar Chowdhry",
       "capturedAt": "2026-06-17T19:34:57.185Z"
+    },
+    {
+      "id": "e8a1cd23-57a4-4358-a3ad-278898b85846",
+      "firstName": "Mark",
+      "lastName": "Krol",
+      "email": "mark@fakro.ca",
+      "phone": "519-352-6587",
+      "company": "Fakro",
+      "notes": "",
+      "productsOfInterest": [],
+      "capturedBy": "Test User",
+      "capturedAt": "2026-06-18T13:01:15.978Z"
     }
   ]
 }
