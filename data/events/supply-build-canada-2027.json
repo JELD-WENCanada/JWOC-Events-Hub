@@ -3,5 +3,20 @@
   "name": "Supply Build Canada - 2027",
   "date": "2027-01-01",
   "createdAt": "2026-06-11T00:00:00.000Z",
-  "leads": []
+  "leads": [
+    {
+      "id": "c1a873dc-da41-48da-9a47-2116085c16be",
+      "firstName": "Test",
+      "lastName": "Lead",
+      "email": "abtest@gmail.com",
+      "phone": "647-328-7777",
+      "company": "Castle",
+      "notes": "",
+      "productsOfInterest": [
+        "7500"
+      ],
+      "capturedBy": "Abrar Chowdhry",
+      "capturedAt": "2026-06-18T09:22:18.826Z"
+    }
+  ]
 }
