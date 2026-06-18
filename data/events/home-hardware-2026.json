@@ -29,6 +29,20 @@
       ],
       "capturedBy": "Abrar Chowdhry",
       "capturedAt": "2026-06-17T19:34:57.185Z"
+    },
+    {
+      "id": "87bd0dca-7b5a-4041-a544-ee492d55027a",
+      "firstName": "Seweryn",
+      "lastName": "Zalewski",
+      "email": "office@fakro.ca",
+      "phone": "1-866-325-7622",
+      "company": "FAKRO",
+      "notes": "Slider details",
+      "productsOfInterest": [
+        "Jwc7500"
+      ],
+      "capturedBy": "Test User",
+      "capturedAt": "2026-06-18T13:33:46.193Z"
     }
   ]
 }
