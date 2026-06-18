@@ -31,19 +31,6 @@
       "capturedAt": "2026-06-17T19:34:57.185Z"
     },
     {
-      "id": "73e99b51-5f87-4ae1-ba38-00b5e329d783",
-      "firstName": "Seweryn",
-      "lastName": "Zalewski",
-      "email": "office@fakro.ca",
-      "phone": "1-866-325-7622",
-      "company": "FAKRO",
-      "notes": "",
-      "productsOfInterest": [],
-      "capturedBy": "Test User",
-      "capturedAt": "2026-06-18T13:13:36.213Z",
-      "isDuplicate": true
-    },
-    {
       "id": "4678d0bc-3fd6-4d25-b07f-faa537cc204a",
       "firstName": "Mark",
       "lastName": "Krol",
@@ -67,8 +54,7 @@
         "Jwc7500"
       ],
       "capturedBy": "Test User",
-      "capturedAt": "2026-06-18T13:17:29.532Z",
-      "isDuplicate": true
+      "capturedAt": "2026-06-18T13:17:29.532Z"
     }
   ]
 }
