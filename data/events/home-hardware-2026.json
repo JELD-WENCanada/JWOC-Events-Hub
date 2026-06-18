@@ -41,6 +41,18 @@
       "productsOfInterest": [],
       "capturedBy": "Test User",
       "capturedAt": "2026-06-18T13:01:15.978Z"
+    },
+    {
+      "id": "73e99b51-5f87-4ae1-ba38-00b5e329d783",
+      "firstName": "Seweryn",
+      "lastName": "Zalewski",
+      "email": "office@fakro.ca",
+      "phone": "1-866-325-7622",
+      "company": "FAKRO",
+      "notes": "",
+      "productsOfInterest": [],
+      "capturedBy": "Test User",
+      "capturedAt": "2026-06-18T13:13:36.213Z"
     }
   ]
 }
