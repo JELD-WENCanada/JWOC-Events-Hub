@@ -1,0 +1,54 @@
+const { checkAdminSession } = require("./admin");
+
+function checkApiKey(req) {
+  const expected = process.env.API_KEY;
+  if (!expected) {
+    return false;
+  }
+
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith("Bearer ")) {
+    return false;
+  }
+
+  return auth.slice(7) === expected;
+}
+
+function checkWriteAuth(req) {
+  return checkApiKey(req) || checkAdminSession(req);
+}
+
+function requireApiKey(req, res) {
+  if (checkApiKey(req)) {
+    return true;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+  return false;
+}
+
+function requireWriteAuth(req, res) {
+  if (checkWriteAuth(req)) {
+    return true;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+  return false;
+}
+
+function requireAdminSession(req, res) {
+  if (checkAdminSession(req)) {
+    return true;
+  }
+
+  res.status(401).json({ error: "Unauthorized" });
+  return false;
+}
+
+module.exports = {
+  checkApiKey,
+  checkWriteAuth,
+  requireAdminSession,
+  requireApiKey,
+  requireWriteAuth,
+};

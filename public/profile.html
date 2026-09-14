@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile — JWOC Events Hub</title>
+    <link rel="stylesheet" href="/css/style.css?v=14" />
+  </head>
+  <body class="session-pending">
+    <div id="loginScreen" class="login-screen" hidden>
+      <div class="login-brand">
+        <div class="login-brand-content">
+          <img
+            src="/images/jw-logo.png"
+            alt="JELD-WEN"
+            class="login-brand-logo"
+            width="1000"
+            height="138"
+          />
+          <h1 class="login-brand-title">Events Hub</h1>
+          <p class="login-brand-copy">
+            Sign in to view and update your admin profile.
+          </p>
+        </div>
+      </div>
+      <div class="login-panel">
+        <div class="login-card">
+          <h2 class="login-card-title">Sign in</h2>
+          <p class="login-card-subtitle">Use your authorized work email</p>
+          <form id="loginForm" class="login-form">
+            <div>
+              <label class="field-label" for="adminEmail">Email</label>
+              <input
+                id="adminEmail"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@jeldwen.com"
+              />
+            </div>
+            <button type="submit" id="loginButton" class="btn btn-primary">
+              Continue
+            </button>
+          </form>
+          <div id="loginMessage" class="message" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="profileApp" hidden>
+      <header class="app-header">
+        <div class="app-header-inner">
+          <a href="/" class="app-header-brand app-header-brand-link">
+            <img
+              src="/images/jw-logo.png"
+              alt=""
+              class="app-header-logo"
+              width="28"
+              height="28"
+            />
+            <h1 class="nav-title">Events Hub</h1>
+          </a>
+          <div class="app-header-actions">
+            <a
+              href="/profile.html"
+              id="userPill"
+              class="user-pill user-pill-link"
+              aria-current="page"
+            >
+              <span id="userAvatar" class="user-avatar"></span>
+              <span class="user-pill-text">
+                <span
+                  id="userDisplayName"
+                  class="user-display-name"
+                  hidden
+                ></span>
+                <span id="userEmail" class="user-email"></span>
+              </span>
+            </a>
+            <a href="/" class="btn btn-ghost">Dashboard</a>
+            <button type="button" id="signOutButton" class="btn btn-ghost">
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="app-content">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="/">Events</a>
+          <span class="breadcrumb-sep">/</span>
+          <span>Profile</span>
+        </nav>
+
+        <div class="profile-hero">
+          <div id="profileHeroAvatar" class="profile-hero-avatar"></div>
+          <div>
+            <h2 id="profileHeroName" class="profile-hero-name">Profile</h2>
+            <p id="profileHeroMeta" class="profile-hero-meta"></p>
+          </div>
+        </div>
+
+        <div class="profile-layout">
+          <section class="panel">
+            <div class="panel-body">
+              <h3 class="profile-card-title">Your profile</h3>
+              <form id="profileForm" class="profile-form">
+                <div class="field-grid">
+                  <div class="field">
+                    <label class="field-label" for="profileFirstName"
+                      >First name</label
+                    >
+                    <input
+                      id="profileFirstName"
+                      name="firstName"
+                      type="text"
+                      autocomplete="given-name"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="profileLastName"
+                      >Last name</label
+                    >
+                    <input
+                      id="profileLastName"
+                      name="lastName"
+                      type="text"
+                      autocomplete="family-name"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="profileTitle"
+                    >Job title</label
+                  >
+                  <input
+                    id="profileTitle"
+                    name="title"
+                    type="text"
+                    autocomplete="organization-title"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field-label" for="profilePhone">Phone</label>
+                  <input
+                    id="profilePhone"
+                    name="phone"
+                    type="tel"
+                    autocomplete="tel"
+                  />
+                </div>
+                <div class="field">
+                  <label class="field-label" for="profileRegion"
+                    >Region / territory</label
+                  >
+                  <input id="profileRegion" name="region" type="text" />
+                </div>
+                <div class="field">
+                  <label class="field-label" for="profileEmail">Email</label>
+                  <input id="profileEmail" type="email" disabled />
+                </div>
+                <div id="profileUpdated" class="profile-updated" hidden></div>
+                <div id="profileMessage" class="message" hidden></div>
+                <div class="modal-actions">
+                  <button
+                    type="submit"
+                    id="profileSaveButton"
+                    class="btn btn-primary"
+                  >
+                    Save profile
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-body">
+              <h3 class="profile-card-title">Admin team</h3>
+              <p class="page-subtitle">
+                Shared directory for Events Hub administrators.
+              </p>
+              <div id="teamGrid" class="team-grid"></div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="/js/app.js?v=14"></script>
+    <script>
+      const loginScreen = document.getElementById("loginScreen");
+      const profileApp = document.getElementById("profileApp");
+      const loginForm = document.getElementById("loginForm");
+      const signOutButton = document.getElementById("signOutButton");
+      const profileForm = document.getElementById("profileForm");
+      const profileHeroAvatar = document.getElementById("profileHeroAvatar");
+      const profileHeroName = document.getElementById("profileHeroName");
+      const profileHeroMeta = document.getElementById("profileHeroMeta");
+      const profileUpdated = document.getElementById("profileUpdated");
+      const teamGrid = document.getElementById("teamGrid");
+
+      const userPillElements = {
+        pill: document.getElementById("userPill"),
+        avatar: document.getElementById("userAvatar"),
+        displayName: document.getElementById("userDisplayName"),
+        email: document.getElementById("userEmail"),
+      };
+
+      let profileData = null;
+
+      function finishSessionInit() {
+        document.body.classList.remove("session-pending");
+      }
+
+      function setAuthenticated(isAuthenticated) {
+        document.body.classList.toggle("app-authenticated", isAuthenticated);
+        loginScreen.hidden = isAuthenticated;
+        profileApp.hidden = !isAuthenticated;
+      }
+
+      function renderProfileHero() {
+        if (!profileData) {
+          return;
+        }
+
+        const { email, profile } = profileData;
+        profileHeroAvatar.textContent = profileInitials(profile, email);
+        profileHeroName.textContent = profileDisplayName(profile, email);
+
+        const metaParts = [email];
+        if (profile.title) {
+          metaParts.unshift(profile.title);
+        }
+        if (profile.region) {
+          metaParts.push(profile.region);
+        }
+        profileHeroMeta.textContent = metaParts.join(" · ");
+
+        if (profile.updatedAt) {
+          profileUpdated.hidden = false;
+          profileUpdated.textContent = `Last updated ${formatDateTime(profile.updatedAt)}`;
+        } else {
+          profileUpdated.hidden = true;
+          profileUpdated.textContent = "";
+        }
+      }
+
+      function fillProfileForm() {
+        if (!profileData) {
+          return;
+        }
+
+        const { email, profile } = profileData;
+        document.getElementById("profileFirstName").value =
+          profile.firstName || "";
+        document.getElementById("profileLastName").value =
+          profile.lastName || "";
+        document.getElementById("profileTitle").value = profile.title || "";
+        document.getElementById("profilePhone").value = profile.phone || "";
+        document.getElementById("profileRegion").value = profile.region || "";
+        document.getElementById("profileEmail").value = email;
+      }
+
+      function renderTeamGrid() {
+        if (!profileData?.team?.length) {
+          teamGrid.innerHTML =
+            '<p class="leaderboard-empty">No admin profiles yet.</p>';
+          return;
+        }
+
+        teamGrid.innerHTML = profileData.team
+          .map((member) => {
+            const name = profileDisplayName(member.profile, member.email);
+            const details = [
+              member.profile.title,
+              member.profile.phone,
+              member.profile.region,
+            ].filter(Boolean);
+
+            const selfBadge = member.isSelf
+              ? '<span class="team-card-badge">You</span>'
+              : "";
+
+            return `
+              <article class="team-card${member.isSelf ? " is-self" : ""}">
+                <div class="team-card-avatar">${escapeHtml(profileInitials(member.profile, member.email))}</div>
+                <div class="team-card-body">
+                  ${selfBadge}
+                  <h4 class="team-card-name">${escapeHtml(name)}</h4>
+                  <p class="team-card-email">${escapeHtml(member.email)}</p>
+                  ${
+                    details.length
+                      ? `<p class="team-card-detail">${escapeHtml(details.join(" · "))}</p>`
+                      : `<p class="team-card-detail">Profile not filled in yet.</p>`
+                  }
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderProfilePage() {
+        applyUserPillState(
+          userPillElements,
+          profileData.email,
+          profileData.profile,
+        );
+        renderProfileHero();
+        fillProfileForm();
+        renderTeamGrid();
+        document.title = `${profileDisplayName(profileData.profile, profileData.email)} — JWOC Events Hub`;
+      }
+
+      async function loadProfile() {
+        profileData = await fetchAdminProfile();
+        renderProfilePage();
+      }
+
+      async function initSession() {
+        try {
+          const session = await getAdminSession();
+          setAuthenticated(session.authenticated);
+
+          if (session.authenticated) {
+            await loadProfile();
+          } else {
+            applyUserPillState(userPillElements, "", null);
+          }
+        } catch (error) {
+          setAuthenticated(false);
+          showMessage("loginMessage", error.message, "error");
+        } finally {
+          finishSessionInit();
+        }
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = document.getElementById("loginButton");
+        const formData = new FormData(loginForm);
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Signing in…";
+        showMessage("loginMessage", "", "success");
+
+        try {
+          await loginAdmin(String(formData.get("email") || ""));
+          loginForm.reset();
+          setAuthenticated(true);
+          await loadProfile();
+        } catch (error) {
+          setAuthenticated(false);
+          showMessage("loginMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      });
+
+      signOutButton.addEventListener("click", async () => {
+        signOutButton.disabled = true;
+        signOutButton.textContent = "Signing out…";
+
+        try {
+          await logoutAdmin();
+        } finally {
+          signOutButton.disabled = false;
+          signOutButton.textContent = "Sign out";
+          setAuthenticated(false);
+          profileData = null;
+          teamGrid.innerHTML = "";
+        }
+      });
+
+      profileForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const button = document.getElementById("profileSaveButton");
+        const defaultLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Saving…";
+        showMessage("profileMessage", "", "success");
+
+        try {
+          profileData = await updateAdminProfile({
+            firstName: document.getElementById("profileFirstName").value,
+            lastName: document.getElementById("profileLastName").value,
+            title: document.getElementById("profileTitle").value,
+            phone: document.getElementById("profilePhone").value,
+            region: document.getElementById("profileRegion").value,
+          });
+          renderProfilePage();
+          showMessage("profileMessage", "Profile saved.", "success");
+        } catch (error) {
+          showMessage("profileMessage", error.message, "error");
+        } finally {
+          button.disabled = false;
+          button.textContent = defaultLabel;
+        }
+      });
+
+      initSession();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "jwoc-events-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JWOC Events Hub — event lead collection and export for JW Sales Hub",
+  "scripts": {
+    "local": "export $(grep -v '^#' .env.local | xargs) && vercel dev --yes --listen 3000",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}
